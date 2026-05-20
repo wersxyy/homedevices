@@ -41,6 +41,10 @@ function DevicePage() {
   const [chatInput, setChatInput] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const pipVideoRef = useRef<HTMLVideoElement | null>(null);
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const pipRafRef = useRef<number | null>(null);
+  const [pipActive, setPipActive] = useState(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
