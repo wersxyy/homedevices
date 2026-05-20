@@ -447,11 +447,11 @@ function DoorbellPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button onClick={toggleSpeakBack} variant={speakingBack ? "default" : "outline"}>
+                  <Button onClick={toggleSpeakBack} variant={speakingBack ? "default" : "outline"} className={speakingBack ? "" : "text-black"}>
                     {speakingBack ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                     {speakingBack ? "Speaking back…" : "Speak back"}
                   </Button>
-                  <Button variant="ghost" onClick={endCall}>End</Button>
+                  <Button variant="ghost" className={isFull ? "text-white hover:text-white" : ""} onClick={endCall}>End</Button>
                 </div>
                 <div className={`max-h-32 overflow-y-auto rounded-lg border ${isFull ? "border-white/20 bg-black/40" : "bg-background"} p-2 text-sm space-y-1`}>
                   {chat.length === 0 ? (
