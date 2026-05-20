@@ -578,9 +578,9 @@ function DevicePage() {
         ref={videoRef}
         autoPlay
         playsInline
-        muted={!ringing}
+        muted={!ringing && !viewing}
         className={
-          ringing
+          ringing || viewing
             ? "fixed inset-0 z-40 h-full w-full bg-black object-cover"
             : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
         }
