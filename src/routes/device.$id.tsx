@@ -343,6 +343,7 @@ function DevicePage() {
   function sendAllow() {
     channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
     setAllowed(true);
+    stopRing();
   }
 
   function sendDone() {
