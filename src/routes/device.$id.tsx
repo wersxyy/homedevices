@@ -233,6 +233,20 @@ function DevicePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mirror the active stream into the fullscreen video whenever fullscreen opens.
+  useEffect(() => {
+    if (!fullScreen) return;
+    const fv = fullscreenVideoRef.current;
+    const v = videoRef.current;
+    if (fv && v?.srcObject) {
+      fv.srcObject = v.srcObject;
+      void fv.play().catch(() => {});
+    } else {
+      attachIdleToVideo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullScreen]);
+
   // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
     try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
