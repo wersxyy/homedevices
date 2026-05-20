@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Bell, BellOff, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw } from "lucide-react";
+import { Bell, BellOff, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
