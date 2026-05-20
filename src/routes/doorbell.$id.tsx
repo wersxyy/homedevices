@@ -403,7 +403,7 @@ function DoorbellPage() {
           <audio ref={remoteAudioRef} autoPlay playsInline />
 
           <div
-            className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
+            className={`${isFull ? "absolute bottom-0 inset-x-0 max-h-[55%] overflow-y-auto bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
             style={isFull ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } : undefined}
           >
             {!ringing && (
@@ -447,11 +447,11 @@ function DoorbellPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button onClick={toggleSpeakBack} variant={speakingBack ? "default" : "outline"}>
+                  <Button onClick={toggleSpeakBack} variant={speakingBack ? "default" : "outline"} className={speakingBack ? "" : "text-black"}>
                     {speakingBack ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                     {speakingBack ? "Speaking back…" : "Speak back"}
                   </Button>
-                  <Button variant="ghost" onClick={endCall}>End</Button>
+                  <Button variant="ghost" className={isFull ? "text-white hover:text-white" : ""} onClick={endCall}>End</Button>
                 </div>
                 <div className={`max-h-32 overflow-y-auto rounded-lg border ${isFull ? "border-white/20 bg-black/40" : "bg-background"} p-2 text-sm space-y-1`}>
                   {chat.length === 0 ? (
