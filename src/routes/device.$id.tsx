@@ -499,6 +499,7 @@ function DevicePage() {
       allowTimerRef.current = null;
     }
     setRinging(false);
+    setViewing(false);
     setAllowed(false);
     setSpeaking(false);
     setChat([]);
@@ -507,6 +508,20 @@ function DevicePage() {
     void exitPip();
     void exitNativeFullscreen();
     closePc();
+  }
+
+  function startView() {
+    if (!doorbellOnline) { toast.error("Doorbell is offline"); return; }
+    if (ringing || viewing) return;
+    setViewing(true);
+    setSpeaking(false);
+    pendingIce.current = [];
+    channelRef.current?.send({ type: "broadcast", event: "view-request", payload: {} });
+  }
+
+  function stopView() {
+    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+    closeCall();
   }
 
   function toggleSpeak() {
