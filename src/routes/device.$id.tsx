@@ -33,6 +33,11 @@ function DevicePage() {
   const [doorbellOnline, setDoorbellOnline] = useState(false);
   const [showCode, setShowCode] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const dndKey = `homedevices:dnd:${id}`;
+  const [dnd, setDnd] = useState<boolean>(() => {
+    try { return localStorage.getItem(`homedevices:dnd:${id}`) === "1"; } catch { return false; }
+  });
+
 
   // Incoming-call state
   const [ringing, setRinging] = useState(false);
