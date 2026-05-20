@@ -201,7 +201,7 @@ function DoorbellPage() {
       supabase.removeChannel(ch);
       channelRef.current = null;
     };
-  }, [id, permGranted]);
+  }, [id]);
 
   // Wake lock — keep device awake whenever the doorbell is active
   useEffect(() => {
