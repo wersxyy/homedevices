@@ -55,6 +55,9 @@ function DevicePage() {
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const pipRafRef = useRef<number | null>(null);
+  const idleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const idleStreamRef = useRef<MediaStream | null>(null);
+  const idleRafRef = useRef<number | null>(null);
   const [pipActive, setPipActive] = useState(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -65,6 +68,56 @@ function DevicePage() {
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
   const allowTimerRef = useRef<number | null>(null);
+
+  // Idle "Waiting for visitor" canvas stream so the <video> always has frames —
+  // required so PiP can be opened before anyone rings.
+  function ensureIdleStream(): MediaStream | null {
+    if (idleStreamRef.current) return idleStreamRef.current;
+    try {
+      const canvas = idleCanvasRef.current ?? document.createElement("canvas");
+      canvas.width = 640; canvas.height = 360;
+      idleCanvasRef.current = canvas;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      const draw = () => {
+        const t = new Date();
+        ctx.fillStyle = "#0b0b0f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "600 28px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Waiting for visitor…", canvas.width / 2, canvas.height / 2 - 8);
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "16px system-ui, -apple-system, sans-serif";
+        ctx.fillText(device?.name ?? "HomeDevices", canvas.width / 2, canvas.height / 2 + 24);
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "12px system-ui, -apple-system, sans-serif";
+        ctx.fillText(t.toLocaleTimeString(), canvas.width / 2, canvas.height - 18);
+        idleRafRef.current = window.setTimeout(() => requestAnimationFrame(draw), 1000) as unknown as number;
+      };
+      draw();
+      const c = canvas as HTMLCanvasElement & { captureStream?: (fps?: number) => MediaStream };
+      const stream = c.captureStream?.(15) ?? null;
+      idleStreamRef.current = stream;
+      return stream;
+    } catch { return null; }
+  }
+  function stopIdleStream() {
+    if (idleRafRef.current != null) { clearTimeout(idleRafRef.current); idleRafRef.current = null; }
+    idleStreamRef.current?.getTracks().forEach((t) => t.stop());
+    idleStreamRef.current = null;
+  }
+  function attachIdleToVideo() {
+    const v = videoRef.current;
+    if (!v) return;
+    const s = ensureIdleStream();
+    if (s && v.srcObject !== s) {
+      v.srcObject = s;
+      v.muted = true;
+      v.playsInline = true;
+      void v.play().catch(() => {});
+    }
+  }
 
   async function requestNativeFullscreen(el: HTMLElement | null) {
     if (!el) return;
@@ -163,6 +216,14 @@ function DevicePage() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
+
+  // Attach the idle placeholder stream once the video is mounted so the user
+  // can open Picture-in-Picture even before anyone rings.
+  useEffect(() => {
+    attachIdleToVideo();
+    return () => { stopIdleStream(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
@@ -310,6 +371,8 @@ function DevicePage() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
+    // Restore idle placeholder so PiP keeps working between calls.
+    attachIdleToVideo();
   }
 
   function stopPipLoop() {
@@ -347,7 +410,9 @@ function DevicePage() {
     // Make sure PiP isn't disabled by attribute, and the element is playing.
     sv.disablePictureInPicture = false;
     sv.removeAttribute("disablepictureinpicture");
-    try { sv.muted = false; await sv.play(); } catch { /* noop */ }
+    // If nothing is streaming yet, attach the idle placeholder so PiP can open.
+    if (!sv.srcObject && !sv.src) attachIdleToVideo();
+    try { sv.muted = ringing ? false : true; await sv.play(); } catch { /* noop */ }
     if (!sv.srcObject && !sv.src) { toast.error("Waiting for video — try again in a moment"); return; }
 
     // Safari (iOS / macOS) path
@@ -463,6 +528,21 @@ function DevicePage() {
 
   return (
     <div className="min-h-screen">
+      {/* Always-mounted video. Lives at root so PiP works even before anyone
+          rings (driven by the idle canvas stream) and the WebRTC stream can
+          attach without remounting. When ringing, it fills the screen behind
+          the overlay UI; otherwise it sits hidden 1x1 offscreen. */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={!ringing}
+        className={
+          ringing
+            ? "fixed inset-0 z-40 h-full w-full bg-black object-cover"
+            : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
+        }
+      />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
@@ -495,6 +575,10 @@ function DevicePage() {
             <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
+            <Button variant="outline" className="sm:col-span-2" onClick={() => (pipActive ? exitPip() : enterPip())}>
+              <PictureInPicture2 className="mr-2 h-4 w-4" />
+              {pipActive ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
+            </Button>
             <Button
               variant={dnd ? "default" : "outline"}
               className={dnd ? "sm:col-span-2 bg-destructive text-destructive-foreground hover:bg-destructive/90" : "sm:col-span-2"}
@@ -504,6 +588,11 @@ function DevicePage() {
               {dnd ? "Do not disturb is ON — tap to allow rings" : "Do not disturb"}
             </Button>
           </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {pipActive
+              ? "Picture-in-Picture is on — you'll see your doorbell even if you leave this tab."
+              : "Tip: Open Picture-in-Picture, then switch tabs — the ring still plays."}
+          </p>
           {dnd && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
               The doorbell can't ring while this is on.
@@ -608,22 +697,21 @@ function DevicePage() {
       {ringing && (
         <div
           ref={ringOverlayRef}
-          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur"
+          className="pointer-events-none fixed inset-0 z-50 flex flex-col"
           style={{ minHeight: "100dvh" }}
         >
-          <div className="border-b px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <div className="pointer-events-auto border-b bg-background/90 backdrop-blur px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
             <h2 className="text-lg font-semibold">Someone is at your door</h2>
           </div>
-          <div className="relative flex-1 bg-black">
-            <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline />
+          <div className="relative flex-1">
             {allowed && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
+              <div className="pointer-events-auto absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
                 Allowed
               </div>
             )}
           </div>
-          <div className="border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+          <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button variant="secondary" onClick={stopRing} disabled={!ringtonePlaying}>
                 <BellOff className="mr-2 h-4 w-4" />
