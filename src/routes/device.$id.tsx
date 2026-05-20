@@ -131,6 +131,7 @@ function DevicePage() {
       setSpeaking(false);
       setChat([]);
       pendingIce.current = [];
+      playRing();
       // refresh last_ring_at
       supabase.from("devices").select("last_ring_at").eq("id", device.id).maybeSingle()
         .then(({ data }) => data && setDevice((d) => d ? { ...d, last_ring_at: data.last_ring_at } : d));
