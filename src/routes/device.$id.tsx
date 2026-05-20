@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Bell, BellOff, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw } from "lucide-react";
+import { Bell, BellOff, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,7 @@ function DevicePage() {
 
   // Incoming-call state
   const [ringing, setRinging] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const [ringtonePlaying, setRingtonePlaying] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -498,6 +499,7 @@ function DevicePage() {
       allowTimerRef.current = null;
     }
     setRinging(false);
+    setViewing(false);
     setAllowed(false);
     setSpeaking(false);
     setChat([]);
@@ -506,6 +508,20 @@ function DevicePage() {
     void exitPip();
     void exitNativeFullscreen();
     closePc();
+  }
+
+  function startView() {
+    if (!doorbellOnline) { toast.error("Doorbell is offline"); return; }
+    if (ringing || viewing) return;
+    setViewing(true);
+    setSpeaking(false);
+    pendingIce.current = [];
+    channelRef.current?.send({ type: "broadcast", event: "view-request", payload: {} });
+  }
+
+  function stopView() {
+    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+    closeCall();
   }
 
   function toggleSpeak() {
@@ -562,9 +578,9 @@ function DevicePage() {
         ref={videoRef}
         autoPlay
         playsInline
-        muted={!ringing}
+        muted={!ringing && !viewing}
         className={
-          ringing
+          ringing || viewing
             ? "fixed inset-0 z-40 h-full w-full bg-black object-cover"
             : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
         }
@@ -600,6 +616,10 @@ function DevicePage() {
             </Button>
             <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
+            </Button>
+            <Button variant="default" className="sm:col-span-2" onClick={startView} disabled={!doorbellOnline || ringing || viewing}>
+              <Eye className="mr-2 h-4 w-4" />
+              {viewing ? "Viewing camera…" : "View camera"}
             </Button>
             <Button variant="outline" className="sm:col-span-2" onClick={() => (pipActive ? exitPip() : enterPip())}>
               <PictureInPicture2 className="mr-2 h-4 w-4" />
@@ -792,6 +812,32 @@ function DevicePage() {
               <Input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type a message…" />
               <Button type="submit" size="icon"><Send className="h-4 w-4" /></Button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Viewing overlay (owner-initiated live view) */}
+      {viewing && !ringing && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex flex-col" style={{ minHeight: "100dvh" }}>
+          <div className="pointer-events-auto border-b bg-background/90 backdrop-blur px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
+            <h2 className="text-lg font-semibold inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Live camera</h2>
+          </div>
+          <div className="flex-1" />
+          <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant={speaking ? "default" : "outline"} className={speaking ? "" : "text-black"} onClick={toggleSpeak}>
+                {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
+                {speaking ? "Speaking…" : "Speak"}
+              </Button>
+              <Button variant="outline" className="text-black" onClick={() => (pipActive ? exitPip() : enterPip())}>
+                <PictureInPicture2 className="mr-2 h-4 w-4" />
+                {pipActive ? "Exit PiP" : "Picture-in-Picture"}
+              </Button>
+              <Button variant="destructive" onClick={stopView}>
+                <PhoneOff className="mr-2 h-4 w-4" /> End
+              </Button>
+            </div>
           </div>
         </div>
       )}
