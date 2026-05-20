@@ -215,12 +215,17 @@ function DoorbellPage() {
 
 
   async function onRing() {
+    if (ownerDnd) {
+      toast.error("Do Not Disturb is on. The owner has muted the doorbell.");
+      return;
+    }
     const stream = localStreamRef.current;
     if (!stream) {
       toast.error("Camera not ready");
       return;
     }
     if (ringing) return;
+
 
     setRinging(true);
     setAllowed(false);
