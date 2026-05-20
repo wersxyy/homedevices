@@ -396,7 +396,8 @@ function DevicePage() {
     return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ringing, pipActive]);
-  }
+
+
 
   function closeCall() {
     if (allowTimerRef.current != null) {
