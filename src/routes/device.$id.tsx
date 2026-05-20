@@ -129,6 +129,14 @@ function DevicePage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
+  // Persist DND + re-broadcast presence when it changes
+  useEffect(() => {
+    try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
+    const ch = channelRef.current;
+    if (ch) void ch.track({ online: true, dnd });
+  }, [dnd, dndKey]);
+
+
   // Load device
   useEffect(() => {
     if (!user) return;
