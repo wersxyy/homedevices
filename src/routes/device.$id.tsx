@@ -52,6 +52,29 @@ function DevicePage() {
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
+  const ringOverlayRef = useRef<HTMLDivElement | null>(null);
+  const fullScreenRef = useRef<HTMLDivElement | null>(null);
+
+  async function requestNativeFullscreen(el: HTMLElement | null) {
+    if (!el) return;
+    const anyEl = el as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (anyEl.webkitRequestFullscreen) await anyEl.webkitRequestFullscreen();
+    } catch { /* user gesture / unsupported */ }
+  }
+  async function exitNativeFullscreen() {
+    const anyDoc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (anyDoc.webkitFullscreenElement && anyDoc.webkitExitFullscreen) await anyDoc.webkitExitFullscreen();
+    } catch { /* noop */ }
+  }
 
   const soundKey = `homedevices:ringsound:${id}`;
   useEffect(() => {
