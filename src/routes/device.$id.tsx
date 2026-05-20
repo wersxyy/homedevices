@@ -324,6 +324,7 @@ function DevicePage() {
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
+    stopRing();
     void exitPip();
     closePc();
   }
