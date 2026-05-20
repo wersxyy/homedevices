@@ -1,0 +1,170 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Bell, Plus, LogOut, DoorOpen } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/use-auth";
+
+export const Route = createFileRoute("/dashboard")({
+  component: Dashboard,
+  head: () => ({ meta: [{ title: "Your devices — HomeDevices" }] }),
+});
+
+type Device = {
+  id: string;
+  name: string;
+  type: string;
+  access_code: string;
+  last_ring_at: string | null;
+};
+
+function genCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 6; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+}
+
+function Dashboard() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [devices, setDevices] = useState<Device[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth" });
+  }, [user, loading, navigate]);
+
+  async function load() {
+    const { data, error } = await supabase
+      .from("devices")
+      .select("id,name,type,access_code,last_ring_at")
+      .order("created_at", { ascending: false });
+    if (error) return toast.error(error.message);
+    setDevices(data ?? []);
+  }
+
+  useEffect(() => {
+    if (user) load();
+  }, [user]);
+
+  async function createDevice(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setCreating(true);
+    try {
+      const { error } = await supabase.from("devices").insert({
+        user_id: user.id,
+        name: name.trim() || "Doorbell",
+        type: "doorbell",
+        access_code: genCode(),
+      });
+      if (error) throw error;
+      toast.success("Device added");
+      setOpen(false);
+      setName("");
+      load();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  }
+
+  return (
+    <div className="min-h-screen">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
+        <Link to="/" className="flex items-center gap-2 font-semibold">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Bell className="h-4 w-4" />
+          </div>
+          HomeDevices
+        </Link>
+        <Button variant="ghost" size="sm" onClick={signOut}>
+          <LogOut className="mr-2 h-4 w-4" /> Sign out
+        </Button>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-5 pb-24">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold md:text-3xl">Your devices</h1>
+            <p className="text-sm text-muted-foreground">Add a smart device and pair it with a phone or tablet.</p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Add device</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New smart device</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={createDevice} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <div className="flex items-center gap-2 rounded-lg border bg-accent/40 px-3 py-2 text-sm">
+                    <DoorOpen className="h-4 w-4" /> Doorbell Camera
+                  </div>
+                  <p className="text-xs text-muted-foreground">More device types coming soon.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" placeholder="Main Entrance" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={creating}>
+                    {creating ? "Creating…" : "Create"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {devices === null && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {devices?.length === 0 && (
+            <div className="col-span-full rounded-2xl border border-dashed bg-card/50 p-10 text-center">
+              <DoorOpen className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="mt-3 text-sm text-muted-foreground">No devices yet. Tap "Add device" to begin.</p>
+            </div>
+          )}
+          {devices?.map((d) => (
+            <Link
+              key={d.id}
+              to="/device/$id"
+              params={{ id: d.id }}
+              className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/60 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <DoorOpen className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{d.name}</h3>
+                  <p className="text-xs text-muted-foreground">Doorbell Camera</p>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                {d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
