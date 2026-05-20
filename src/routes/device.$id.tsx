@@ -753,21 +753,21 @@ function DevicePage() {
           </div>
           <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button variant="secondary" onClick={stopRing} disabled={!ringtonePlaying}>
+              <Button variant="secondary" className="text-black" onClick={stopRing} disabled={!ringtonePlaying}>
                 <BellOff className="mr-2 h-4 w-4" />
                 {ringtonePlaying ? "Stop ringtone" : "Ringtone stopped"}
               </Button>
-              <Button onClick={sendAllow} className="bg-success text-success-foreground hover:bg-success/90">
+              <Button onClick={sendAllow} className="bg-success text-black hover:bg-success/90">
                 <Check className="mr-2 h-4 w-4" /> Allow
               </Button>
-              <Button variant="outline" onClick={sendDone}>
+              <Button variant="outline" className="text-black" onClick={sendDone}>
                 Done
               </Button>
-              <Button variant={speaking ? "default" : "outline"} onClick={toggleSpeak}>
+              <Button variant={speaking ? "default" : "outline"} className={speaking ? "" : "text-black"} onClick={toggleSpeak}>
                 {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                 {speaking ? "Speaking…" : "Speak"}
               </Button>
-              <Button variant="outline" onClick={() => (pipActive ? exitPip() : enterPip())}>
+              <Button variant="outline" className="text-black" onClick={() => (pipActive ? exitPip() : enterPip())}>
                 <PictureInPicture2 className="mr-2 h-4 w-4" />
                 {pipActive ? "Exit PiP" : "Picture-in-Picture"}
               </Button>
