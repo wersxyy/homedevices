@@ -29,6 +29,8 @@ function DoorbellPage() {
   const [ringing, setRinging] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [ownerOnline, setOwnerOnline] = useState(false);
+  const [ownerDnd, setOwnerDnd] = useState(false);
+
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [speakingBack, setSpeakingBack] = useState(false);
@@ -130,9 +132,12 @@ function DoorbellPage() {
     channelRef.current = ch;
 
     ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState() as Record<string, unknown[]>;
-      setOwnerOnline(Boolean(state["owner"]));
+      const state = ch.presenceState() as Record<string, Array<{ online?: boolean; dnd?: boolean }>>;
+      const owner = state["owner"]?.[0];
+      setOwnerOnline(Boolean(owner));
+      setOwnerDnd(Boolean(owner?.dnd));
     });
+
 
     ch.on("broadcast", { event: "answer" }, async (msg) => {
       const sdp = msg.payload as RTCSessionDescriptionInit;
@@ -210,12 +215,17 @@ function DoorbellPage() {
 
 
   async function onRing() {
+    if (ownerDnd) {
+      toast.error("Do Not Disturb is on. The owner has muted the doorbell.");
+      return;
+    }
     const stream = localStreamRef.current;
     if (!stream) {
       toast.error("Camera not ready");
       return;
     }
     if (ringing) return;
+
 
     setRinging(true);
     setAllowed(false);
@@ -380,6 +390,11 @@ function DoorbellPage() {
           >
             {!ringing && (
               <>
+                {ownerDnd && (
+                  <div className={`rounded-lg border px-3 py-2 text-center text-sm font-medium ${isFull ? "border-white/30 bg-white/10 text-white" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
+                    Do Not Disturb is on — please come back later.
+                  </div>
+                )}
                 <label className={`block text-xs font-medium ${isFull ? "text-white/80" : "text-muted-foreground"}`}>
                   Message (optional)
                 </label>
@@ -388,16 +403,19 @@ function DoorbellPage() {
                   onChange={(e) => setRingText(e.target.value)}
                   placeholder="e.g. Package delivery"
                   maxLength={120}
+                  disabled={ownerDnd}
                   className={isFull ? "bg-white/10 border-white/20 text-white placeholder:text-white/60" : ""}
                 />
                 <Button
                   onClick={onRing}
+                  disabled={ownerDnd}
                   className="w-full h-20 text-2xl font-bold shadow-lg"
                   size="lg"
                 >
                   <BellRing className="mr-3 !h-7 !w-7" />
-                  RING
+                  {ownerDnd ? "MUTED" : "RING"}
                 </Button>
+
               </>
             )}
 

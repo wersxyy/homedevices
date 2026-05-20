@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Bell, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw } from "lucide-react";
+import { Bell, BellOff, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,11 @@ function DevicePage() {
   const [doorbellOnline, setDoorbellOnline] = useState(false);
   const [showCode, setShowCode] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const dndKey = `homedevices:dnd:${id}`;
+  const [dnd, setDnd] = useState<boolean>(() => {
+    try { return localStorage.getItem(`homedevices:dnd:${id}`) === "1"; } catch { return false; }
+  });
+
 
   // Incoming-call state
   const [ringing, setRinging] = useState(false);
@@ -124,6 +129,14 @@ function DevicePage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
+  // Persist DND + re-broadcast presence when it changes
+  useEffect(() => {
+    try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
+    const ch = channelRef.current;
+    if (ch) void ch.track({ online: true, dnd });
+  }, [dnd, dndKey]);
+
+
   // Load device
   useEffect(() => {
     if (!user) return;
@@ -189,9 +202,10 @@ function DevicePage() {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ online: true });
+        await ch.track({ online: true, dnd });
       }
     });
+
 
     return () => {
       closeCall();
@@ -430,7 +444,21 @@ function DevicePage() {
             <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
+            <Button
+              variant={dnd ? "default" : "outline"}
+              className={dnd ? "sm:col-span-2 bg-destructive text-destructive-foreground hover:bg-destructive/90" : "sm:col-span-2"}
+              onClick={() => setDnd((v) => !v)}
+            >
+              {dnd ? <BellOff className="mr-2 h-4 w-4" /> : <Bell className="mr-2 h-4 w-4" />}
+              {dnd ? "Do not disturb is ON — tap to allow rings" : "Do not disturb"}
+            </Button>
           </div>
+          {dnd && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              The doorbell can't ring while this is on.
+            </p>
+          )}
+
 
           {showCode && (
             <div className="mt-4 rounded-xl border bg-accent/40 p-5 text-center">
