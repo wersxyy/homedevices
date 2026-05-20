@@ -527,7 +527,7 @@ function DevicePage() {
               </div>
             )}
           </div>
-          <div className="border-t bg-card p-4 space-y-3">
+          <div className="border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button onClick={sendAllow} className="bg-success text-success-foreground hover:bg-success/90">
                 <Check className="mr-2 h-4 w-4" /> Allow
