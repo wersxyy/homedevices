@@ -299,10 +299,41 @@ function DoorbellPage() {
     channelRef.current?.send({ type: "broadcast", event: "offer", payload: offer });
   }
 
+  async function startViewSession() {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+    setViewing(true);
+    setSpeakingBack(false);
+    pendingIce.current = [];
+
+    const pc = new RTCPeerConnection(ICE);
+    pcRef.current = pc;
+    for (const t of stream.getTracks()) pc.addTrack(t, stream);
+    pc.ontrack = (e) => {
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.play().catch(() => {});
+      }
+    };
+    pc.onicecandidate = (e) => {
+      if (e.candidate && channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "ice",
+          payload: { from: "doorbell", candidate: e.candidate.toJSON() },
+        });
+      }
+    };
+    const offer = await pc.createOffer({ offerToReceiveAudio: true });
+    await pc.setLocalDescription(offer);
+    channelRef.current?.send({ type: "broadcast", event: "offer", payload: offer });
+  }
+
   function endCall() {
     pcRef.current?.close();
     pcRef.current = null;
     setRinging(false);
+    setViewing(false);
     setAllowed(false);
     setSpeakingBack(false);
     setRingText("");
