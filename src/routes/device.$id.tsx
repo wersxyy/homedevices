@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Bell, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff } from "lucide-react";
+import { Bell, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,10 @@ function DevicePage() {
   const [chatInput, setChatInput] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const pipVideoRef = useRef<HTMLVideoElement | null>(null);
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const pipRafRef = useRef<number | null>(null);
+  const [pipActive, setPipActive] = useState(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -182,10 +186,97 @@ function DevicePage() {
     if (videoRef.current) videoRef.current.srcObject = null;
   }
 
+  function stopPipLoop() {
+    if (pipRafRef.current != null) {
+      cancelAnimationFrame(pipRafRef.current);
+      pipRafRef.current = null;
+    }
+  }
+
+  async function exitPip() {
+    stopPipLoop();
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      }
+    } catch { /* noop */ }
+    setPipActive(false);
+  }
+
+  async function enterPip() {
+    const srcVideo = videoRef.current;
+    if (!srcVideo || !srcVideo.srcObject) {
+      toast.error("No video yet");
+      return;
+    }
+    const anyDoc = document as Document & { pictureInPictureEnabled?: boolean };
+    if (!anyDoc.pictureInPictureEnabled) {
+      toast.error("Picture-in-Picture not supported on this device");
+      return;
+    }
+    try {
+      const canvas = pipCanvasRef.current ?? document.createElement("canvas");
+      pipCanvasRef.current = canvas;
+      const pipVideo = pipVideoRef.current ?? document.createElement("video");
+      pipVideoRef.current = pipVideo;
+      pipVideo.muted = true;
+      pipVideo.autoplay = true;
+      (pipVideo as HTMLVideoElement & { playsInline?: boolean }).playsInline = true;
+
+      const w = srcVideo.videoWidth || 640;
+      const h = srcVideo.videoHeight || 360;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no 2d ctx");
+
+      const draw = () => {
+        const sv = videoRef.current;
+        if (!sv) return;
+        const vw = sv.videoWidth || w;
+        const vh = sv.videoHeight || h;
+        if (canvas.width !== vw || canvas.height !== vh) {
+          canvas.width = vw;
+          canvas.height = vh;
+        }
+        try { ctx.drawImage(sv, 0, 0, canvas.width, canvas.height); } catch { /* noop */ }
+        // Banner
+        const bannerH = Math.max(48, Math.round(canvas.height * 0.11));
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(0, 0, canvas.width, bannerH);
+        ctx.fillStyle = "#fff";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+        const fs = Math.round(bannerH * 0.45);
+        ctx.font = `600 ${fs}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+        ctx.fillText("Someone is at your door", canvas.width / 2, bannerH / 2);
+        pipRafRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+
+      const stream = canvas.captureStream(30);
+      pipVideo.srcObject = stream;
+      await pipVideo.play().catch(() => {});
+      await pipVideo.requestPictureInPicture();
+      setPipActive(true);
+
+      pipVideo.onleavepictureinpicture = () => {
+        stopPipLoop();
+        setPipActive(false);
+      };
+    } catch (e) {
+      console.warn(e);
+      toast.error("Couldn't start Picture-in-Picture");
+      stopPipLoop();
+      setPipActive(false);
+    }
+  }
+
   function closeCall() {
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
+    void exitPip();
     closePc();
   }
 
@@ -323,6 +414,10 @@ function DevicePage() {
               <Button variant={speaking ? "default" : "outline"} onClick={toggleSpeak}>
                 {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                 {speaking ? "Speaking…" : "Speak"}
+              </Button>
+              <Button variant="outline" onClick={() => (pipActive ? exitPip() : enterPip())}>
+                <PictureInPicture2 className="mr-2 h-4 w-4" />
+                {pipActive ? "Exit PiP" : "Picture-in-Picture"}
               </Button>
               <Button variant="destructive" onClick={sendDone}>
                 <PhoneOff className="mr-2 h-4 w-4" /> End
