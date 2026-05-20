@@ -358,8 +358,9 @@ function DoorbellPage() {
             )}
             {isFull && (
               <button
-                onClick={() => setIsFull(false)}
+                onClick={() => void exitFullscreen()}
                 className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur"
+                style={{ top: "max(1rem, env(safe-area-inset-top))" }}
               >
                 Exit fullscreen
               </button>
