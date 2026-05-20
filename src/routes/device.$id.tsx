@@ -45,6 +45,7 @@ function DevicePage() {
 
   // Incoming-call state
   const [ringing, setRinging] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const [ringtonePlaying, setRingtonePlaying] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
