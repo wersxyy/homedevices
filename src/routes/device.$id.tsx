@@ -45,6 +45,7 @@ function DevicePage() {
 
   // Incoming-call state
   const [ringing, setRinging] = useState(false);
+  const [ringtonePlaying, setRingtonePlaying] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [chat, setChat] = useState<ChatMsg[]>([]);
