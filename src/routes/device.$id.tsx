@@ -67,6 +67,7 @@ function DevicePage() {
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
+  const fullscreenVideoRef = useRef<HTMLVideoElement | null>(null);
   const allowTimerRef = useRef<number | null>(null);
 
   // Idle "Waiting for visitor" canvas stream so the <video> always has frames —
@@ -116,6 +117,13 @@ function DevicePage() {
       v.muted = true;
       v.playsInline = true;
       void v.play().catch(() => {});
+    }
+    const fv = fullscreenVideoRef.current;
+    if (fv && s && fv.srcObject !== s) {
+      fv.srcObject = s;
+      fv.muted = true;
+      fv.playsInline = true;
+      void fv.play().catch(() => {});
     }
   }
 
@@ -224,6 +232,20 @@ function DevicePage() {
     return () => { stopIdleStream(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Mirror the active stream into the fullscreen video whenever fullscreen opens.
+  useEffect(() => {
+    if (!fullScreen) return;
+    const fv = fullscreenVideoRef.current;
+    const v = videoRef.current;
+    if (fv && v?.srcObject) {
+      fv.srcObject = v.srcObject;
+      void fv.play().catch(() => {});
+    } else {
+      attachIdleToVideo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullScreen]);
 
   // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
@@ -340,6 +362,10 @@ function DevicePage() {
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
+      }
+      if (fullscreenVideoRef.current && stream) {
+        fullscreenVideoRef.current.srcObject = stream;
+        fullscreenVideoRef.current.play().catch(() => {});
       }
     };
 
@@ -675,20 +701,34 @@ function DevicePage() {
           style={{ minHeight: "100dvh", paddingTop: "max(1.5rem, env(safe-area-inset-top))", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{device.name}</h2>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
+              <h2 className="text-lg font-semibold">Live camera</h2>
+            </div>
             <Button variant="ghost" size="sm" onClick={() => { void exitNativeFullscreen(); setFullScreen(false); }}>Close</Button>
           </div>
-          <div className="mt-10 flex-1 grid place-items-center">
-            <div className="text-center">
-              <p className="text-sm uppercase tracking-wider text-muted-foreground">Last ring</p>
-              <p className="mt-3 text-4xl font-semibold">
+
+          <div className="mt-4 flex-1 overflow-hidden rounded-2xl border bg-black">
+            <video
+              ref={fullscreenVideoRef}
+              autoPlay
+              playsInline
+              muted={!ringing}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Last ring</p>
+              <p className="mt-1 text-2xl font-semibold">
                 {device.last_ring_at ? new Date(device.last_ring_at).toLocaleString() : "Never"}
               </p>
-              <p className={`mt-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${doorbellOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
-                <span className={`h-2 w-2 rounded-full ${doorbellOnline ? "bg-success" : "bg-muted-foreground"}`} />
-                {doorbellOnline ? "Doorbell connected" : "Doorbell offline"}
-              </p>
             </div>
+            <p className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${doorbellOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
+              <span className={`h-2 w-2 rounded-full ${doorbellOnline ? "bg-success" : "bg-muted-foreground"}`} />
+              {doorbellOnline ? "Doorbell connected" : "Doorbell offline"}
+            </p>
           </div>
         </div>
       )}
@@ -713,21 +753,21 @@ function DevicePage() {
           </div>
           <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button variant="secondary" onClick={stopRing} disabled={!ringtonePlaying}>
+              <Button variant="secondary" className="text-black" onClick={stopRing} disabled={!ringtonePlaying}>
                 <BellOff className="mr-2 h-4 w-4" />
                 {ringtonePlaying ? "Stop ringtone" : "Ringtone stopped"}
               </Button>
-              <Button onClick={sendAllow} className="bg-success text-success-foreground hover:bg-success/90">
+              <Button onClick={sendAllow} className="bg-success text-black hover:bg-success/90">
                 <Check className="mr-2 h-4 w-4" /> Allow
               </Button>
-              <Button variant="outline" onClick={sendDone}>
+              <Button variant="outline" className="text-black" onClick={sendDone}>
                 Done
               </Button>
-              <Button variant={speaking ? "default" : "outline"} onClick={toggleSpeak}>
+              <Button variant={speaking ? "default" : "outline"} className={speaking ? "" : "text-black"} onClick={toggleSpeak}>
                 {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                 {speaking ? "Speaking…" : "Speak"}
               </Button>
-              <Button variant="outline" onClick={() => (pipActive ? exitPip() : enterPip())}>
+              <Button variant="outline" className="text-black" onClick={() => (pipActive ? exitPip() : enterPip())}>
                 <PictureInPicture2 className="mr-2 h-4 w-4" />
                 {pipActive ? "Exit PiP" : "Picture-in-Picture"}
               </Button>
