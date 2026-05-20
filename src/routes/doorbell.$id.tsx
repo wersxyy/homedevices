@@ -30,6 +30,7 @@ function DoorbellPage() {
   const [allowed, setAllowed] = useState(false);
   const [ownerOnline, setOwnerOnline] = useState(false);
   const [ownerDnd, setOwnerDnd] = useState(false);
+  const [ownerScreenText, setOwnerScreenText] = useState("Press RING for help");
 
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -147,10 +148,11 @@ function DoorbellPage() {
     channelRef.current = ch;
 
     ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState() as Record<string, Array<{ online?: boolean; dnd?: boolean }>>;
+      const state = ch.presenceState() as Record<string, Array<{ online?: boolean; dnd?: boolean; screenText?: string }>>;
       const owner = state["owner"]?.[0];
       setOwnerOnline(Boolean(owner));
       setOwnerDnd(Boolean(owner?.dnd));
+      setOwnerScreenText(owner?.screenText?.trim() || "Press RING for help");
     });
 
 
@@ -405,6 +407,9 @@ function DoorbellPage() {
           >
             {!ringing && (
               <>
+                <div className={`rounded-lg px-3 py-3 text-center text-lg font-semibold ${isFull ? "bg-white/10 text-white" : "bg-accent/50 text-foreground"}`}>
+                  {ownerScreenText}
+                </div>
                 {ownerDnd && (
                   <div className={`rounded-lg border px-3 py-2 text-center text-sm font-medium ${isFull ? "border-white/30 bg-white/10 text-white" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
                     Do Not Disturb is on — please come back later.
