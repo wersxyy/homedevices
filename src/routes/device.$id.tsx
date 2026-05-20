@@ -349,6 +349,10 @@ function DevicePage() {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
       }
+      if (fullscreenVideoRef.current && stream) {
+        fullscreenVideoRef.current.srcObject = stream;
+        fullscreenVideoRef.current.play().catch(() => {});
+      }
     };
 
     pc.onicecandidate = (e) => {
