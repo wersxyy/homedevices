@@ -34,8 +34,12 @@ function DevicePage() {
   const [showCode, setShowCode] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const dndKey = `homedevices:dnd:${id}`;
+  const screenTextKey = `homedevices:screen-text:${id}`;
   const [dnd, setDnd] = useState<boolean>(() => {
     try { return localStorage.getItem(`homedevices:dnd:${id}`) === "1"; } catch { return false; }
+  });
+  const [doorbellScreenText, setDoorbellScreenText] = useState<string>(() => {
+    try { return localStorage.getItem(`homedevices:screen-text:${id}`) || "Press RING for help"; } catch { return "Press RING for help"; }
   });
 
 
@@ -59,6 +63,7 @@ function DevicePage() {
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
+  const allowTimerRef = useRef<number | null>(null);
 
   async function requestNativeFullscreen(el: HTMLElement | null) {
     if (!el) return;
@@ -156,12 +161,18 @@ function DevicePage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
-  // Persist DND + re-broadcast presence when it changes
+  // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
     try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
     const ch = channelRef.current;
-    if (ch) void ch.track({ online: true, dnd });
-  }, [dnd, dndKey]);
+    if (ch) void ch.track({ online: true, dnd, screenText: doorbellScreenText });
+  }, [dnd, dndKey, doorbellScreenText]);
+
+  useEffect(() => {
+    try { localStorage.setItem(screenTextKey, doorbellScreenText); } catch { /* noop */ }
+    const ch = channelRef.current;
+    if (ch) void ch.track({ online: true, dnd, screenText: doorbellScreenText });
+  }, [screenTextKey, doorbellScreenText, dnd]);
 
 
   // Load device
@@ -229,7 +240,7 @@ function DevicePage() {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ online: true, dnd });
+        await ch.track({ online: true, dnd, screenText: doorbellScreenText });
       }
     });
 
@@ -385,6 +396,10 @@ function DevicePage() {
   }
 
   function closeCall() {
+    if (allowTimerRef.current != null) {
+      window.clearTimeout(allowTimerRef.current);
+      allowTimerRef.current = null;
+    }
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
@@ -410,11 +425,14 @@ function DevicePage() {
 
   function sendAllow() {
     stopRing();
+    setAllowed(true);
     channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
-    // Allow also clears the ringing state on both sides so the doorbell is ready for the next person.
-    channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
-    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
-    closeCall();
+    if (allowTimerRef.current != null) window.clearTimeout(allowTimerRef.current);
+    allowTimerRef.current = window.setTimeout(() => {
+      channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
+      channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+      closeCall();
+    }, 3500);
   }
 
   function sendDone() {
@@ -485,6 +503,23 @@ function DevicePage() {
               The doorbell can't ring while this is on.
             </p>
           )}
+
+          <div className="mt-4 rounded-xl border bg-background/40 p-4">
+            <label htmlFor="doorbell-screen-text" className="text-sm font-medium text-foreground">
+              Doorbell screen text
+            </label>
+            <Input
+              id="doorbell-screen-text"
+              className="mt-2"
+              value={doorbellScreenText}
+              onChange={(e) => setDoorbellScreenText(e.target.value)}
+              placeholder="Press RING for help"
+              maxLength={90}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              This appears above the ring button on the doorbell device.
+            </p>
+          </div>
 
 
           {showCode && (
