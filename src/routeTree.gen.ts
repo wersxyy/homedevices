@@ -13,6 +13,8 @@ import { Route as JoinRouteImport } from './routes/join'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DoorbellIdRouteImport } from './routes/doorbell.$id'
+import { Route as DeviceIdRouteImport } from './routes/device.$id'
 
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
@@ -34,18 +36,32 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DoorbellIdRoute = DoorbellIdRouteImport.update({
+  id: '/doorbell/$id',
+  path: '/doorbell/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeviceIdRoute = DeviceIdRouteImport.update({
+  id: '/device/$id',
+  path: '/device/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/device/$id': typeof DeviceIdRoute
+  '/doorbell/$id': typeof DoorbellIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/device/$id': typeof DeviceIdRoute
+  '/doorbell/$id': typeof DoorbellIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,28 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/device/$id': typeof DeviceIdRoute
+  '/doorbell/$id': typeof DoorbellIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/join'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/join'
+    | '/device/$id'
+    | '/doorbell/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/join'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/join'
+  to: '/' | '/auth' | '/dashboard' | '/join' | '/device/$id' | '/doorbell/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/join'
+    | '/device/$id'
+    | '/doorbell/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +98,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   JoinRoute: typeof JoinRoute
+  DeviceIdRoute: typeof DeviceIdRoute
+  DoorbellIdRoute: typeof DoorbellIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +132,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/doorbell/$id': {
+      id: '/doorbell/$id'
+      path: '/doorbell/$id'
+      fullPath: '/doorbell/$id'
+      preLoaderRoute: typeof DoorbellIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/device/$id': {
+      id: '/device/$id'
+      path: '/device/$id'
+      fullPath: '/device/$id'
+      preLoaderRoute: typeof DeviceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +154,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   JoinRoute: JoinRoute,
+  DeviceIdRoute: DeviceIdRoute,
+  DoorbellIdRoute: DoorbellIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
