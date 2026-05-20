@@ -27,6 +27,7 @@ function DoorbellPage() {
   const [permGranted, setPermGranted] = useState(false);
   const [ringText, setRingText] = useState("");
   const [ringing, setRinging] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [ownerOnline, setOwnerOnline] = useState(false);
   const [ownerDnd, setOwnerDnd] = useState(false);
