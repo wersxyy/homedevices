@@ -2,11 +2,12 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Bell, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2 } from "lucide-react";
+import { Bell, Check, X, Mic, MicOff, Maximize2, Send, MessageSquare, PhoneOff, PictureInPicture2, Music, Upload, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
+import defaultRingSound from "@/assets/ring-default.mp3";
 
 export const Route = createFileRoute("/device/$id")({
   component: DevicePage,
@@ -49,6 +50,52 @@ function DevicePage() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
+
+  const soundKey = `homedevices:ringsound:${id}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(soundKey);
+      if (raw) setCustomSound(JSON.parse(raw));
+    } catch { /* noop */ }
+  }, [soundKey]);
+
+  function playRing() {
+    try {
+      const src = customSound?.dataUrl ?? defaultRingSound;
+      const a = ringAudioRef.current ?? new Audio();
+      ringAudioRef.current = a;
+      if (a.src !== src) a.src = src;
+      a.loop = true;
+      a.currentTime = 0;
+      void a.play().catch(() => { /* autoplay may need gesture */ });
+    } catch { /* noop */ }
+  }
+  function stopRing() {
+    const a = ringAudioRef.current;
+    if (!a) return;
+    try { a.pause(); a.currentTime = 0; } catch { /* noop */ }
+  }
+
+  async function onPickSound(file: File) {
+    if (!file.type.startsWith("audio/")) { toast.error("Please choose an audio file"); return; }
+    if (file.size > 3 * 1024 * 1024) { toast.error("Max 3 MB"); return; }
+    const dataUrl: string = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = () => rej(r.error);
+      r.readAsDataURL(file);
+    });
+    const next = { name: file.name, dataUrl };
+    setCustomSound(next);
+    try { localStorage.setItem(soundKey, JSON.stringify(next)); } catch { /* quota */ }
+    toast.success("Custom ring sound saved");
+  }
+  function resetSound() {
+    setCustomSound(null);
+    try { localStorage.removeItem(soundKey); } catch { /* noop */ }
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -84,6 +131,7 @@ function DevicePage() {
       setSpeaking(false);
       setChat([]);
       pendingIce.current = [];
+      playRing();
       // refresh last_ring_at
       supabase.from("devices").select("last_ring_at").eq("id", device.id).maybeSingle()
         .then(({ data }) => data && setDevice((d) => d ? { ...d, last_ring_at: data.last_ring_at } : d));
@@ -276,6 +324,7 @@ function DevicePage() {
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
+    stopRing();
     void exitPip();
     closePc();
   }
@@ -294,6 +343,7 @@ function DevicePage() {
   function sendAllow() {
     channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
     setAllowed(true);
+    stopRing();
   }
 
   function sendDone() {
@@ -362,6 +412,41 @@ function DevicePage() {
           <div className="mt-6 rounded-xl border bg-background/40 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Last ring</p>
             <p className="mt-1">{device.last_ring_at ? new Date(device.last_ring_at).toLocaleString() : "Never"}</p>
+          </div>
+
+          <div className="mt-4 rounded-xl border bg-background/40 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Music className="h-4 w-4" /> Ring sound
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Plays only on this device when someone rings. The doorbell won't hear it.
+                </p>
+                <p className="mt-2 text-xs">
+                  Current: <span className="font-medium text-foreground">{customSound ? customSound.name : "Default"}</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs hover:bg-accent">
+                  <Upload className="h-3.5 w-3.5" /> Upload
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickSound(f); e.target.value = ""; }}
+                  />
+                </label>
+                <Button variant="ghost" size="sm" onClick={() => { const a = new Audio(customSound?.dataUrl ?? defaultRingSound); void a.play().catch(() => {}); }}>
+                  Preview
+                </Button>
+                {customSound && (
+                  <Button variant="ghost" size="sm" onClick={resetSound}>
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
