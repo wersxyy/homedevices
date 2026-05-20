@@ -567,6 +567,10 @@ function DevicePage() {
             <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
+            <Button variant="outline" className="sm:col-span-2" onClick={() => (pipActive ? exitPip() : enterPip())}>
+              <PictureInPicture2 className="mr-2 h-4 w-4" />
+              {pipActive ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
+            </Button>
             <Button
               variant={dnd ? "default" : "outline"}
               className={dnd ? "sm:col-span-2 bg-destructive text-destructive-foreground hover:bg-destructive/90" : "sm:col-span-2"}
@@ -576,6 +580,11 @@ function DevicePage() {
               {dnd ? "Do not disturb is ON — tap to allow rings" : "Do not disturb"}
             </Button>
           </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            {pipActive
+              ? "Picture-in-Picture is on — you'll see your doorbell even if you leave this tab."
+              : "Tip: Open Picture-in-Picture, then switch tabs — the ring still plays."}
+          </p>
           {dnd && (
             <p className="mt-2 text-center text-xs text-muted-foreground">
               The doorbell can't ring while this is on.
