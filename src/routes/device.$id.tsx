@@ -67,6 +67,7 @@ function DevicePage() {
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
+  const fullscreenVideoRef = useRef<HTMLVideoElement | null>(null);
   const allowTimerRef = useRef<number | null>(null);
 
   // Idle "Waiting for visitor" canvas stream so the <video> always has frames —
