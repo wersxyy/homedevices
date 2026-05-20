@@ -347,8 +347,11 @@ function DevicePage() {
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
+    setChat([]);
+    setChatInput("");
     stopRing();
     void exitPip();
+    void exitNativeFullscreen();
     closePc();
   }
 
@@ -358,18 +361,23 @@ function DevicePage() {
       toast.error("Microphone unavailable");
       return;
     }
+    stopRing();
     const next = !speaking;
     stream.getAudioTracks().forEach((t) => (t.enabled = next));
     setSpeaking(next);
   }
 
   function sendAllow() {
-    channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
-    setAllowed(true);
     stopRing();
+    channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
+    // Allow also clears the ringing state on both sides so the doorbell is ready for the next person.
+    channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
+    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+    closeCall();
   }
 
   function sendDone() {
+    stopRing();
     channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
     channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
     closeCall();
