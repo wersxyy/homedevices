@@ -815,6 +815,32 @@ function DevicePage() {
           </div>
         </div>
       )}
+
+      {/* Viewing overlay (owner-initiated live view) */}
+      {viewing && !ringing && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex flex-col" style={{ minHeight: "100dvh" }}>
+          <div className="pointer-events-auto border-b bg-background/90 backdrop-blur px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
+            <h2 className="text-lg font-semibold inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Live camera</h2>
+          </div>
+          <div className="flex-1" />
+          <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant={speaking ? "default" : "outline"} className={speaking ? "" : "text-black"} onClick={toggleSpeak}>
+                {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
+                {speaking ? "Speaking…" : "Speak"}
+              </Button>
+              <Button variant="outline" className="text-black" onClick={() => (pipActive ? exitPip() : enterPip())}>
+                <PictureInPicture2 className="mr-2 h-4 w-4" />
+                {pipActive ? "Exit PiP" : "Picture-in-Picture"}
+              </Button>
+              <Button variant="destructive" onClick={stopView}>
+                <PhoneOff className="mr-2 h-4 w-4" /> End
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
