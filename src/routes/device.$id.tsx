@@ -339,6 +339,7 @@ function DevicePage() {
     const sv = videoRef.current as (HTMLVideoElement & {
       webkitSupportsPresentationMode?: (m: string) => boolean;
       webkitSetPresentationMode?: (m: string) => void;
+      webkitPresentationMode?: string;
       requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
     }) | null;
     if (!sv || !sv.srcObject) {
