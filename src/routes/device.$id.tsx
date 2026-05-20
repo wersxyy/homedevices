@@ -694,7 +694,7 @@ function DevicePage() {
               </div>
             )}
           </div>
-          <div className="border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+          <div className="pointer-events-auto border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button variant="secondary" onClick={stopRing} disabled={!ringtonePlaying}>
                 <BellOff className="mr-2 h-4 w-4" />
