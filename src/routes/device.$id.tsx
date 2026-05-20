@@ -687,20 +687,34 @@ function DevicePage() {
           style={{ minHeight: "100dvh", paddingTop: "max(1.5rem, env(safe-area-inset-top))", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{device.name}</h2>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
+              <h2 className="text-lg font-semibold">Live camera</h2>
+            </div>
             <Button variant="ghost" size="sm" onClick={() => { void exitNativeFullscreen(); setFullScreen(false); }}>Close</Button>
           </div>
-          <div className="mt-10 flex-1 grid place-items-center">
-            <div className="text-center">
-              <p className="text-sm uppercase tracking-wider text-muted-foreground">Last ring</p>
-              <p className="mt-3 text-4xl font-semibold">
+
+          <div className="mt-4 flex-1 overflow-hidden rounded-2xl border bg-black">
+            <video
+              ref={fullscreenVideoRef}
+              autoPlay
+              playsInline
+              muted={!ringing}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Last ring</p>
+              <p className="mt-1 text-2xl font-semibold">
                 {device.last_ring_at ? new Date(device.last_ring_at).toLocaleString() : "Never"}
               </p>
-              <p className={`mt-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${doorbellOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
-                <span className={`h-2 w-2 rounded-full ${doorbellOnline ? "bg-success" : "bg-muted-foreground"}`} />
-                {doorbellOnline ? "Doorbell connected" : "Doorbell offline"}
-              </p>
             </div>
+            <p className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${doorbellOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
+              <span className={`h-2 w-2 rounded-full ${doorbellOnline ? "bg-success" : "bg-muted-foreground"}`} />
+              {doorbellOnline ? "Doorbell connected" : "Doorbell offline"}
+            </p>
           </div>
         </div>
       )}
