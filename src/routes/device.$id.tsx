@@ -118,6 +118,13 @@ function DevicePage() {
       v.playsInline = true;
       void v.play().catch(() => {});
     }
+    const fv = fullscreenVideoRef.current;
+    if (fv && s && fv.srcObject !== s) {
+      fv.srcObject = s;
+      fv.muted = true;
+      fv.playsInline = true;
+      void fv.play().catch(() => {});
+    }
   }
 
   async function requestNativeFullscreen(el: HTMLElement | null) {
