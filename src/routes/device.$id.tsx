@@ -55,6 +55,9 @@ function DevicePage() {
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const pipRafRef = useRef<number | null>(null);
+  const idleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const idleStreamRef = useRef<MediaStream | null>(null);
+  const idleRafRef = useRef<number | null>(null);
   const [pipActive, setPipActive] = useState(false);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -65,6 +68,56 @@ function DevicePage() {
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
   const allowTimerRef = useRef<number | null>(null);
+
+  // Idle "Waiting for visitor" canvas stream so the <video> always has frames —
+  // required so PiP can be opened before anyone rings.
+  function ensureIdleStream(): MediaStream | null {
+    if (idleStreamRef.current) return idleStreamRef.current;
+    try {
+      const canvas = idleCanvasRef.current ?? document.createElement("canvas");
+      canvas.width = 640; canvas.height = 360;
+      idleCanvasRef.current = canvas;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      const draw = () => {
+        const t = new Date();
+        ctx.fillStyle = "#0b0b0f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "600 28px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Waiting for visitor…", canvas.width / 2, canvas.height / 2 - 8);
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "16px system-ui, -apple-system, sans-serif";
+        ctx.fillText(device?.name ?? "HomeDevices", canvas.width / 2, canvas.height / 2 + 24);
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "12px system-ui, -apple-system, sans-serif";
+        ctx.fillText(t.toLocaleTimeString(), canvas.width / 2, canvas.height - 18);
+        idleRafRef.current = window.setTimeout(() => requestAnimationFrame(draw), 1000) as unknown as number;
+      };
+      draw();
+      const c = canvas as HTMLCanvasElement & { captureStream?: (fps?: number) => MediaStream };
+      const stream = c.captureStream?.(15) ?? null;
+      idleStreamRef.current = stream;
+      return stream;
+    } catch { return null; }
+  }
+  function stopIdleStream() {
+    if (idleRafRef.current != null) { clearTimeout(idleRafRef.current); idleRafRef.current = null; }
+    idleStreamRef.current?.getTracks().forEach((t) => t.stop());
+    idleStreamRef.current = null;
+  }
+  function attachIdleToVideo() {
+    const v = videoRef.current;
+    if (!v) return;
+    const s = ensureIdleStream();
+    if (s && v.srcObject !== s) {
+      v.srcObject = s;
+      v.muted = true;
+      v.playsInline = true;
+      void v.play().catch(() => {});
+    }
+  }
 
   async function requestNativeFullscreen(el: HTMLElement | null) {
     if (!el) return;
