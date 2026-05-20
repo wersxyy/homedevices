@@ -188,6 +188,10 @@ function DoorbellPage() {
       endCall();
     });
     ch.on("broadcast", { event: "owner-end" }, () => endCall());
+    ch.on("broadcast", { event: "view-request" }, () => {
+      if (ringing || viewing) return;
+      void startViewSession();
+    });
     ch.on("broadcast", { event: "chat" }, (msg) => {
       const m = msg.payload as ChatMsg;
       if (m.from === "doorbell") return;
