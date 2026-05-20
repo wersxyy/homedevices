@@ -413,6 +413,41 @@ function DevicePage() {
             <p className="font-medium text-foreground">Last ring</p>
             <p className="mt-1">{device.last_ring_at ? new Date(device.last_ring_at).toLocaleString() : "Never"}</p>
           </div>
+
+          <div className="mt-4 rounded-xl border bg-background/40 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Music className="h-4 w-4" /> Ring sound
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Plays only on this device when someone rings. The doorbell won't hear it.
+                </p>
+                <p className="mt-2 text-xs">
+                  Current: <span className="font-medium text-foreground">{customSound ? customSound.name : "Default"}</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs hover:bg-accent">
+                  <Upload className="h-3.5 w-3.5" /> Upload
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickSound(f); e.target.value = ""; }}
+                  />
+                </label>
+                <Button variant="ghost" size="sm" onClick={() => { const a = new Audio(customSound?.dataUrl ?? defaultRingSound); void a.play().catch(() => {}); }}>
+                  Preview
+                </Button>
+                {customSound && (
+                  <Button variant="ghost" size="sm" onClick={resetSound}>
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
