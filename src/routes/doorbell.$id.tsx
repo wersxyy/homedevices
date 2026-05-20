@@ -132,9 +132,12 @@ function DoorbellPage() {
     channelRef.current = ch;
 
     ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState() as Record<string, unknown[]>;
-      setOwnerOnline(Boolean(state["owner"]));
+      const state = ch.presenceState() as Record<string, Array<{ online?: boolean; dnd?: boolean }>>;
+      const owner = state["owner"]?.[0];
+      setOwnerOnline(Boolean(owner));
+      setOwnerDnd(Boolean(owner?.dnd));
     });
+
 
     ch.on("broadcast", { event: "answer" }, async (msg) => {
       const sdp = msg.payload as RTCSessionDescriptionInit;
