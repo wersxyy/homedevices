@@ -484,10 +484,14 @@ function DevicePage() {
 
       {/* Fullscreen view */}
       {fullScreen && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-background p-6">
+        <div
+          ref={fullScreenRef}
+          className="fixed inset-0 z-40 flex flex-col bg-background p-6"
+          style={{ minHeight: "100dvh", paddingTop: "max(1.5rem, env(safe-area-inset-top))", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{device.name}</h2>
-            <Button variant="ghost" size="sm" onClick={() => setFullScreen(false)}>Close</Button>
+            <Button variant="ghost" size="sm" onClick={() => { void exitNativeFullscreen(); setFullScreen(false); }}>Close</Button>
           </div>
           <div className="mt-10 flex-1 grid place-items-center">
             <div className="text-center">
@@ -506,8 +510,12 @@ function DevicePage() {
 
       {/* Ringing overlay */}
       {ringing && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
-          <div className="border-b px-5 py-4">
+        <div
+          ref={ringOverlayRef}
+          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur"
+          style={{ minHeight: "100dvh" }}
+        >
+          <div className="border-b px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
             <h2 className="text-lg font-semibold">Someone is at your door</h2>
           </div>
