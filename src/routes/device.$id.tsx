@@ -89,6 +89,31 @@ function DevicePage() {
     } catch { /* noop */ }
   }, [soundKey]);
 
+  // Unlock audio on the first user gesture so playRing() actually plays
+  // (browsers block audio.play() without prior user interaction).
+  const audioUnlockedRef = useRef(false);
+  useEffect(() => {
+    function unlock() {
+      if (audioUnlockedRef.current) return;
+      try {
+        const a = ringAudioRef.current ?? new Audio();
+        ringAudioRef.current = a;
+        const src = customSound?.dataUrl ?? defaultRingSound;
+        if (a.src !== src) a.src = src;
+        a.muted = true;
+        a.loop = true;
+        a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; audioUnlockedRef.current = true; })
+          .catch(() => { /* will retry on next gesture */ });
+      } catch { /* noop */ }
+    }
+    window.addEventListener("pointerdown", unlock, { once: false });
+    window.addEventListener("keydown", unlock, { once: false });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [customSound?.dataUrl]);
+
   function playRing() {
     try {
       const src = customSound?.dataUrl ?? defaultRingSound;
@@ -96,10 +121,12 @@ function DevicePage() {
       ringAudioRef.current = a;
       if (a.src !== src) a.src = src;
       a.loop = true;
+      a.muted = false;
       a.currentTime = 0;
-      void a.play().catch(() => { /* autoplay may need gesture */ });
+      void a.play().catch((err) => { console.warn("Ringtone blocked:", err); });
     } catch { /* noop */ }
   }
+
   function stopRing() {
     const a = ringAudioRef.current;
     if (!a) return;
