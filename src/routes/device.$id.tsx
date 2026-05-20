@@ -50,6 +50,52 @@ function DevicePage() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
+
+  const soundKey = `homedevices:ringsound:${id}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(soundKey);
+      if (raw) setCustomSound(JSON.parse(raw));
+    } catch { /* noop */ }
+  }, [soundKey]);
+
+  function playRing() {
+    try {
+      const src = customSound?.dataUrl ?? defaultRingSound;
+      const a = ringAudioRef.current ?? new Audio();
+      ringAudioRef.current = a;
+      if (a.src !== src) a.src = src;
+      a.loop = true;
+      a.currentTime = 0;
+      void a.play().catch(() => { /* autoplay may need gesture */ });
+    } catch { /* noop */ }
+  }
+  function stopRing() {
+    const a = ringAudioRef.current;
+    if (!a) return;
+    try { a.pause(); a.currentTime = 0; } catch { /* noop */ }
+  }
+
+  async function onPickSound(file: File) {
+    if (!file.type.startsWith("audio/")) { toast.error("Please choose an audio file"); return; }
+    if (file.size > 3 * 1024 * 1024) { toast.error("Max 3 MB"); return; }
+    const dataUrl: string = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = () => rej(r.error);
+      r.readAsDataURL(file);
+    });
+    const next = { name: file.name, dataUrl };
+    setCustomSound(next);
+    try { localStorage.setItem(soundKey, JSON.stringify(next)); } catch { /* quota */ }
+    toast.success("Custom ring sound saved");
+  }
+  function resetSound() {
+    setCustomSound(null);
+    try { localStorage.removeItem(soundKey); } catch { /* noop */ }
+  }
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
