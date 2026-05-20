@@ -369,7 +369,10 @@ function DoorbellPage() {
 
           <audio ref={remoteAudioRef} autoPlay playsInline />
 
-          <div className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white" : "mt-4 space-y-3"}`}>
+          <div
+            className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
+            style={isFull ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } : undefined}
+          >
             <div className="flex gap-2">
               <Input
                 value={ringText}
