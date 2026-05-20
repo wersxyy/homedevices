@@ -319,7 +319,7 @@ function DoorbellPage() {
   }
 
   return (
-    <div className={`min-h-screen ${isFull ? "fixed inset-0 z-50 bg-black" : ""}`}>
+    <div ref={fsContainerRef} className={`min-h-screen ${isFull ? "fixed inset-0 z-50 bg-black" : ""}`} style={isFull ? { minHeight: "100dvh" } : undefined}>
       {!isFull && (
         <header className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
           <Link to="/" className="flex items-center gap-2 font-semibold">
