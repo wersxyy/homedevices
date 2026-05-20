@@ -34,8 +34,12 @@ function DevicePage() {
   const [showCode, setShowCode] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const dndKey = `homedevices:dnd:${id}`;
+  const screenTextKey = `homedevices:screen-text:${id}`;
   const [dnd, setDnd] = useState<boolean>(() => {
     try { return localStorage.getItem(`homedevices:dnd:${id}`) === "1"; } catch { return false; }
+  });
+  const [doorbellScreenText, setDoorbellScreenText] = useState<string>(() => {
+    try { return localStorage.getItem(`homedevices:screen-text:${id}`) || "Press RING for help"; } catch { return "Press RING for help"; }
   });
 
 
@@ -59,6 +63,7 @@ function DevicePage() {
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
+  const allowTimerRef = useRef<number | null>(null);
 
   async function requestNativeFullscreen(el: HTMLElement | null) {
     if (!el) return;
@@ -156,12 +161,18 @@ function DevicePage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
-  // Persist DND + re-broadcast presence when it changes
+  // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
     try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
     const ch = channelRef.current;
-    if (ch) void ch.track({ online: true, dnd });
-  }, [dnd, dndKey]);
+    if (ch) void ch.track({ online: true, dnd, screenText: doorbellScreenText });
+  }, [dnd, dndKey, doorbellScreenText]);
+
+  useEffect(() => {
+    try { localStorage.setItem(screenTextKey, doorbellScreenText); } catch { /* noop */ }
+    const ch = channelRef.current;
+    if (ch) void ch.track({ online: true, dnd, screenText: doorbellScreenText });
+  }, [screenTextKey, doorbellScreenText, dnd]);
 
 
   // Load device
@@ -229,7 +240,7 @@ function DevicePage() {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ online: true, dnd });
+        await ch.track({ online: true, dnd, screenText: doorbellScreenText });
       }
     });
 
