@@ -427,7 +427,7 @@ function DevicePage() {
             <Button variant="outline" onClick={() => setShowCode((s) => !s)}>
               {showCode ? "Hide code" : "Access Code"}
             </Button>
-            <Button variant="outline" onClick={() => setFullScreen(true)}>
+            <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
           </div>
