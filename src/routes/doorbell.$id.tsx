@@ -226,7 +226,12 @@ function DoorbellPage() {
     pcRef.current?.close();
     pcRef.current = null;
     setRinging(false);
+    setAllowed(false);
     setSpeakingBack(false);
+    setRingText("");
+    setChat([]);
+    setChatInput("");
+    pendingIce.current = [];
     // disable mic again
     localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = false));
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
