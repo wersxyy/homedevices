@@ -504,6 +504,23 @@ function DevicePage() {
             </p>
           )}
 
+          <div className="mt-4 rounded-xl border bg-background/40 p-4">
+            <label htmlFor="doorbell-screen-text" className="text-sm font-medium text-foreground">
+              Doorbell screen text
+            </label>
+            <Input
+              id="doorbell-screen-text"
+              className="mt-2"
+              value={doorbellScreenText}
+              onChange={(e) => setDoorbellScreenText(e.target.value)}
+              placeholder="Press RING for help"
+              maxLength={90}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              This appears above the ring button on the doorbell device.
+            </p>
+          </div>
+
 
           {showCode && (
             <div className="mt-4 rounded-xl border bg-accent/40 p-5 text-center">
