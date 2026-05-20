@@ -217,6 +217,14 @@ function DevicePage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
+  // Attach the idle placeholder stream once the video is mounted so the user
+  // can open Picture-in-Picture even before anyone rings.
+  useEffect(() => {
+    attachIdleToVideo();
+    return () => { stopIdleStream(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persist owner options + re-broadcast presence when they change
   useEffect(() => {
     try { localStorage.setItem(dndKey, dnd ? "1" : "0"); } catch { /* noop */ }
