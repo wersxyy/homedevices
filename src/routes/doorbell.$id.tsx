@@ -39,7 +39,7 @@ function DoorbellPage() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
 
   // Load device info from sessionStorage
