@@ -673,9 +673,8 @@ function DevicePage() {
             <h2 className="text-lg font-semibold">Someone is at your door</h2>
           </div>
           <div className="relative flex-1 bg-black">
-            <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline />
             {allowed && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
+              <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
                 Allowed
               </div>
             )}
