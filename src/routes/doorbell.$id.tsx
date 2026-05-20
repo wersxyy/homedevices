@@ -29,6 +29,8 @@ function DoorbellPage() {
   const [ringing, setRinging] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [ownerOnline, setOwnerOnline] = useState(false);
+  const [ownerDnd, setOwnerDnd] = useState(false);
+
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [speakingBack, setSpeakingBack] = useState(false);
