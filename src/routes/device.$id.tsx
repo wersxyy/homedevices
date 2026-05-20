@@ -52,6 +52,29 @@ function DevicePage() {
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
+  const ringOverlayRef = useRef<HTMLDivElement | null>(null);
+  const fullScreenRef = useRef<HTMLDivElement | null>(null);
+
+  async function requestNativeFullscreen(el: HTMLElement | null) {
+    if (!el) return;
+    const anyEl = el as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (anyEl.webkitRequestFullscreen) await anyEl.webkitRequestFullscreen();
+    } catch { /* user gesture / unsupported */ }
+  }
+  async function exitNativeFullscreen() {
+    const anyDoc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (anyDoc.webkitFullscreenElement && anyDoc.webkitExitFullscreen) await anyDoc.webkitExitFullscreen();
+    } catch { /* noop */ }
+  }
 
   const soundKey = `homedevices:ringsound:${id}`;
   useEffect(() => {
@@ -324,8 +347,11 @@ function DevicePage() {
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
+    setChat([]);
+    setChatInput("");
     stopRing();
     void exitPip();
+    void exitNativeFullscreen();
     closePc();
   }
 
@@ -335,18 +361,23 @@ function DevicePage() {
       toast.error("Microphone unavailable");
       return;
     }
+    stopRing();
     const next = !speaking;
     stream.getAudioTracks().forEach((t) => (t.enabled = next));
     setSpeaking(next);
   }
 
   function sendAllow() {
-    channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
-    setAllowed(true);
     stopRing();
+    channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
+    // Allow also clears the ringing state on both sides so the doorbell is ready for the next person.
+    channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
+    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+    closeCall();
   }
 
   function sendDone() {
+    stopRing();
     channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
     channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
     closeCall();
@@ -396,7 +427,7 @@ function DevicePage() {
             <Button variant="outline" onClick={() => setShowCode((s) => !s)}>
               {showCode ? "Hide code" : "Access Code"}
             </Button>
-            <Button variant="outline" onClick={() => setFullScreen(true)}>
+            <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
           </div>
@@ -453,10 +484,14 @@ function DevicePage() {
 
       {/* Fullscreen view */}
       {fullScreen && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-background p-6">
+        <div
+          ref={fullScreenRef}
+          className="fixed inset-0 z-40 flex flex-col bg-background p-6"
+          style={{ minHeight: "100dvh", paddingTop: "max(1.5rem, env(safe-area-inset-top))", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{device.name}</h2>
-            <Button variant="ghost" size="sm" onClick={() => setFullScreen(false)}>Close</Button>
+            <Button variant="ghost" size="sm" onClick={() => { void exitNativeFullscreen(); setFullScreen(false); }}>Close</Button>
           </div>
           <div className="mt-10 flex-1 grid place-items-center">
             <div className="text-center">
@@ -475,8 +510,12 @@ function DevicePage() {
 
       {/* Ringing overlay */}
       {ringing && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
-          <div className="border-b px-5 py-4">
+        <div
+          ref={ringOverlayRef}
+          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur"
+          style={{ minHeight: "100dvh" }}
+        >
+          <div className="border-b px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
             <h2 className="text-lg font-semibold">Someone is at your door</h2>
           </div>
@@ -488,7 +527,7 @@ function DevicePage() {
               </div>
             )}
           </div>
-          <div className="border-t bg-card p-4 space-y-3">
+          <div className="border-t bg-card p-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button onClick={sendAllow} className="bg-success text-success-foreground hover:bg-success/90">
                 <Check className="mr-2 h-4 w-4" /> Allow

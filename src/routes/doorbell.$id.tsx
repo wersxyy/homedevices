@@ -41,6 +41,45 @@ function DoorbellPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const fsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  async function enterFullscreen() {
+    setIsFull(true);
+    await new Promise((r) => setTimeout(r, 50));
+    const el = fsContainerRef.current;
+    if (!el) return;
+    const anyEl = el as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+    const anyVideo = previewRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (anyEl.webkitRequestFullscreen) await anyEl.webkitRequestFullscreen();
+      else if (anyVideo?.webkitEnterFullscreen) anyVideo.webkitEnterFullscreen();
+    } catch { /* unsupported */ }
+  }
+  async function exitFullscreen() {
+    const anyDoc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (anyDoc.webkitFullscreenElement && anyDoc.webkitExitFullscreen) await anyDoc.webkitExitFullscreen();
+    } catch { /* noop */ }
+    setIsFull(false);
+  }
+
+  useEffect(() => {
+    function onChange() {
+      const anyDoc = document as Document & { webkitFullscreenElement?: Element | null };
+      if (!document.fullscreenElement && !anyDoc.webkitFullscreenElement) setIsFull(false);
+    }
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange);
+    };
+  }, []);
 
   // Load device info from sessionStorage
   useEffect(() => {
@@ -226,7 +265,12 @@ function DoorbellPage() {
     pcRef.current?.close();
     pcRef.current = null;
     setRinging(false);
+    setAllowed(false);
     setSpeakingBack(false);
+    setRingText("");
+    setChat([]);
+    setChatInput("");
+    pendingIce.current = [];
     // disable mic again
     localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = false));
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
@@ -275,7 +319,7 @@ function DoorbellPage() {
   }
 
   return (
-    <div className={`min-h-screen ${isFull ? "fixed inset-0 z-50 bg-black" : ""}`}>
+    <div ref={fsContainerRef} className={`min-h-screen ${isFull ? "fixed inset-0 z-50 bg-black" : ""}`} style={isFull ? { minHeight: "100dvh" } : undefined}>
       {!isFull && (
         <header className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
           <Link to="/" className="flex items-center gap-2 font-semibold">
@@ -299,7 +343,7 @@ function DoorbellPage() {
                 <h1 className="text-xl font-semibold">{name}</h1>
                 <p className="text-xs text-muted-foreground">Doorbell mode</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setIsFull(true)}>
+              <Button variant="outline" size="sm" onClick={() => void enterFullscreen()}>
                 <Maximize2 className="mr-2 h-4 w-4" /> Fullscreen
               </Button>
             </div>
@@ -314,8 +358,9 @@ function DoorbellPage() {
             )}
             {isFull && (
               <button
-                onClick={() => setIsFull(false)}
+                onClick={() => void exitFullscreen()}
                 className="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur"
+                style={{ top: "max(1rem, env(safe-area-inset-top))" }}
               >
                 Exit fullscreen
               </button>
@@ -324,7 +369,10 @@ function DoorbellPage() {
 
           <audio ref={remoteAudioRef} autoPlay playsInline />
 
-          <div className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white" : "mt-4 space-y-3"}`}>
+          <div
+            className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
+            style={isFull ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } : undefined}
+          >
             <div className="flex gap-2">
               <Input
                 value={ringText}
