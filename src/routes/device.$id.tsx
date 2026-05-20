@@ -680,16 +680,16 @@ function DevicePage() {
       {ringing && (
         <div
           ref={ringOverlayRef}
-          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur"
+          className="pointer-events-none fixed inset-0 z-50 flex flex-col"
           style={{ minHeight: "100dvh" }}
         >
-          <div className="border-b px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <div className="pointer-events-auto border-b bg-background/90 backdrop-blur px-5 py-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{device.name}</p>
             <h2 className="text-lg font-semibold">Someone is at your door</h2>
           </div>
-          <div className="relative flex-1 bg-black">
+          <div className="relative flex-1">
             {allowed && (
-              <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
+              <div className="pointer-events-auto absolute top-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-success px-4 py-1 text-sm font-medium text-success-foreground">
                 Allowed
               </div>
             )}
