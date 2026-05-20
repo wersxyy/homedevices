@@ -180,13 +180,16 @@ function DoorbellPage() {
     };
   }, [id, permGranted]);
 
-  // Wake lock when fullscreen
+  // Wake lock — keep device awake whenever the doorbell is active
   useEffect(() => {
+    if (!permGranted) return;
+    let released = false;
     async function acquire() {
       try {
-        if ("wakeLock" in navigator && isFull) {
+        if ("wakeLock" in navigator) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const lock = await (navigator as any).wakeLock.request("screen");
+          if (released) { try { await lock.release(); } catch { /* noop */ } return; }
           wakeLockRef.current = lock;
           lock.addEventListener?.("release", () => { wakeLockRef.current = null; });
         }
@@ -194,15 +197,17 @@ function DoorbellPage() {
         // ignore
       }
     }
-    if (isFull) acquire();
-    const onVis = () => { if (document.visibilityState === "visible" && isFull) acquire(); };
+    void acquire();
+    const onVis = () => { if (document.visibilityState === "visible" && !wakeLockRef.current) void acquire(); };
     document.addEventListener("visibilitychange", onVis);
     return () => {
+      released = true;
       document.removeEventListener("visibilitychange", onVis);
       wakeLockRef.current?.release().catch(() => {});
       wakeLockRef.current = null;
     };
-  }, [isFull]);
+  }, [permGranted]);
+
 
   async function onRing() {
     const stream = localStreamRef.current;
@@ -373,27 +378,35 @@ function DoorbellPage() {
             className={`${isFull ? "absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
             style={isFull ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } : undefined}
           >
-            <div className="flex gap-2">
-              <Input
-                value={ringText}
-                onChange={(e) => setRingText(e.target.value)}
-                placeholder="Optional message (e.g. Package delivery)"
-                disabled={ringing}
-                className={isFull ? "bg-white/10 border-white/20 text-white placeholder:text-white/60" : ""}
-              />
-              <Button
-                onClick={onRing}
-                disabled={ringing}
-                className="shrink-0"
-                size="lg"
-              >
-                <BellRing className="mr-2 h-4 w-4" />
-                {ringing ? "Ringing…" : "Ring"}
-              </Button>
-            </div>
+            {!ringing && (
+              <>
+                <label className={`block text-xs font-medium ${isFull ? "text-white/80" : "text-muted-foreground"}`}>
+                  Message (optional)
+                </label>
+                <Input
+                  value={ringText}
+                  onChange={(e) => setRingText(e.target.value)}
+                  placeholder="e.g. Package delivery"
+                  maxLength={120}
+                  className={isFull ? "bg-white/10 border-white/20 text-white placeholder:text-white/60" : ""}
+                />
+                <Button
+                  onClick={onRing}
+                  className="w-full h-20 text-2xl font-bold shadow-lg"
+                  size="lg"
+                >
+                  <BellRing className="mr-3 !h-7 !w-7" />
+                  RING
+                </Button>
+              </>
+            )}
 
             {ringing && (
               <>
+                <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 text-center text-sm font-medium text-primary">
+                  {allowed ? "Allowed — come in" : "Ringing…"}
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                   <Button onClick={toggleSpeakBack} variant={speakingBack ? "default" : "outline"}>
                     {speakingBack ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
