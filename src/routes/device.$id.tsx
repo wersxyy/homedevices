@@ -194,9 +194,10 @@ function DevicePage() {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ online: true });
+        await ch.track({ online: true, dnd });
       }
     });
+
 
     return () => {
       closeCall();
