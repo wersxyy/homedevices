@@ -341,17 +341,17 @@ function DevicePage() {
       webkitSetPresentationMode?: (m: string) => void;
       webkitPresentationMode?: string;
       requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
+      disablePictureInPicture?: boolean;
     }) | null;
-    if (!sv || !sv.srcObject) {
-      toast.error("No video yet");
-      return;
-    }
-    try { await sv.play(); } catch { /* noop */ }
+    if (!sv) { toast.error("Video not ready"); return; }
+    // Make sure PiP isn't disabled by attribute, and the element is playing.
+    sv.disablePictureInPicture = false;
+    sv.removeAttribute("disablepictureinpicture");
+    try { sv.muted = false; await sv.play(); } catch { /* noop */ }
+    if (!sv.srcObject && !sv.src) { toast.error("Waiting for video — try again in a moment"); return; }
 
-    // Safari path
-    if (typeof sv.webkitSupportsPresentationMode === "function" &&
-        sv.webkitSupportsPresentationMode("picture-in-picture") &&
-        typeof sv.webkitSetPresentationMode === "function") {
+    // Safari (iOS / macOS) path
+    if (typeof sv.webkitSetPresentationMode === "function") {
       try {
         sv.webkitSetPresentationMode("picture-in-picture");
         setPipActive(true);
@@ -369,19 +369,20 @@ function DevicePage() {
     }
 
     // Standard Picture-in-Picture API
-    const anyDoc = document as Document & { pictureInPictureEnabled?: boolean };
-    if (!anyDoc.pictureInPictureEnabled || typeof sv.requestPictureInPicture !== "function") {
-      toast.error("Picture-in-Picture not supported on this browser");
-      return;
+    if (typeof sv.requestPictureInPicture === "function") {
+      try {
+        await sv.requestPictureInPicture();
+        setPipActive(true);
+        sv.addEventListener("leavepictureinpicture", () => setPipActive(false), { once: true });
+        return;
+      } catch (e) {
+        console.warn("PiP failed:", e);
+        toast.error(`Picture-in-Picture failed: ${(e as Error).message || "try again"}`);
+        return;
+      }
     }
-    try {
-      await sv.requestPictureInPicture();
-      setPipActive(true);
-      sv.addEventListener("leavepictureinpicture", () => setPipActive(false), { once: true });
-    } catch (e) {
-      console.warn("PiP failed:", e);
-      toast.error("Couldn't start Picture-in-Picture — tap Picture-in-Picture again");
-    }
+
+    toast.error("Picture-in-Picture isn't supported in this browser");
   }
 
   // Auto-enter PiP when the user backgrounds the tab during a call,
