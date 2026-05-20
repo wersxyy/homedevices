@@ -415,6 +415,10 @@ function DevicePage() {
                 {speaking ? <Mic className="mr-2 h-4 w-4" /> : <MicOff className="mr-2 h-4 w-4" />}
                 {speaking ? "Speaking…" : "Speak"}
               </Button>
+              <Button variant="outline" onClick={() => (pipActive ? exitPip() : enterPip())}>
+                <PictureInPicture2 className="mr-2 h-4 w-4" />
+                {pipActive ? "Exit PiP" : "Picture-in-Picture"}
+              </Button>
               <Button variant="destructive" onClick={sendDone}>
                 <PhoneOff className="mr-2 h-4 w-4" /> End
               </Button>
