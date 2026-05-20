@@ -403,7 +403,7 @@ function DoorbellPage() {
           <audio ref={remoteAudioRef} autoPlay playsInline />
 
           <div
-            className={`${isFull ? "absolute bottom-0 inset-x-0 max-h-[55%] overflow-y-auto bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 text-white space-y-3" : "mt-4 space-y-3"}`}
+            className={`${isFull ? "absolute bottom-0 inset-x-0 max-h-[55%] overflow-y-auto p-4 text-white space-y-3 backdrop-blur-md bg-black/30" : "mt-4 space-y-3"}`}
             style={isFull ? { paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } : undefined}
           >
             {!ringing && (
