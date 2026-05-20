@@ -390,6 +390,11 @@ function DoorbellPage() {
           >
             {!ringing && (
               <>
+                {ownerDnd && (
+                  <div className={`rounded-lg border px-3 py-2 text-center text-sm font-medium ${isFull ? "border-white/30 bg-white/10 text-white" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
+                    Do Not Disturb is on — please come back later.
+                  </div>
+                )}
                 <label className={`block text-xs font-medium ${isFull ? "text-white/80" : "text-muted-foreground"}`}>
                   Message (optional)
                 </label>
@@ -398,16 +403,19 @@ function DoorbellPage() {
                   onChange={(e) => setRingText(e.target.value)}
                   placeholder="e.g. Package delivery"
                   maxLength={120}
+                  disabled={ownerDnd}
                   className={isFull ? "bg-white/10 border-white/20 text-white placeholder:text-white/60" : ""}
                 />
                 <Button
                   onClick={onRing}
+                  disabled={ownerDnd}
                   className="w-full h-20 text-2xl font-bold shadow-lg"
                   size="lg"
                 >
                   <BellRing className="mr-3 !h-7 !w-7" />
-                  RING
+                  {ownerDnd ? "MUTED" : "RING"}
                 </Button>
+
               </>
             )}
 
