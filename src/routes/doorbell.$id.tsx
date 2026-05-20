@@ -343,7 +343,7 @@ function DoorbellPage() {
                 <h1 className="text-xl font-semibold">{name}</h1>
                 <p className="text-xs text-muted-foreground">Doorbell mode</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setIsFull(true)}>
+              <Button variant="outline" size="sm" onClick={() => void enterFullscreen()}>
                 <Maximize2 className="mr-2 h-4 w-4" /> Fullscreen
               </Button>
             </div>
