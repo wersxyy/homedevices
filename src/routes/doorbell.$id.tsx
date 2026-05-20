@@ -141,9 +141,10 @@ function DoorbellPage() {
   }, [permGranted, isFull]);
 
 
-  // Channel
+  // Channel — connect immediately so the owner sees the doorbell as online,
+  // even before camera/mic permission resolves.
   useEffect(() => {
-    if (!permGranted) return;
+
     const ch = supabase.channel(`device-${id}`, { config: { presence: { key: "doorbell" } } });
     channelRef.current = ch;
 
