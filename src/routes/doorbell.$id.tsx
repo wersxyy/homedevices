@@ -41,6 +41,45 @@ function DoorbellPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const fsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  async function enterFullscreen() {
+    setIsFull(true);
+    await new Promise((r) => setTimeout(r, 50));
+    const el = fsContainerRef.current;
+    if (!el) return;
+    const anyEl = el as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
+    const anyVideo = previewRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (anyEl.webkitRequestFullscreen) await anyEl.webkitRequestFullscreen();
+      else if (anyVideo?.webkitEnterFullscreen) anyVideo.webkitEnterFullscreen();
+    } catch { /* unsupported */ }
+  }
+  async function exitFullscreen() {
+    const anyDoc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (anyDoc.webkitFullscreenElement && anyDoc.webkitExitFullscreen) await anyDoc.webkitExitFullscreen();
+    } catch { /* noop */ }
+    setIsFull(false);
+  }
+
+  useEffect(() => {
+    function onChange() {
+      const anyDoc = document as Document & { webkitFullscreenElement?: Element | null };
+      if (!document.fullscreenElement && !anyDoc.webkitFullscreenElement) setIsFull(false);
+    }
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange);
+    };
+  }, []);
 
   // Load device info from sessionStorage
   useEffect(() => {
