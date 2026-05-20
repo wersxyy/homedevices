@@ -402,7 +402,9 @@ function DevicePage() {
     // Make sure PiP isn't disabled by attribute, and the element is playing.
     sv.disablePictureInPicture = false;
     sv.removeAttribute("disablepictureinpicture");
-    try { sv.muted = false; await sv.play(); } catch { /* noop */ }
+    // If nothing is streaming yet, attach the idle placeholder so PiP can open.
+    if (!sv.srcObject && !sv.src) attachIdleToVideo();
+    try { sv.muted = ringing ? false : true; await sv.play(); } catch { /* noop */ }
     if (!sv.srcObject && !sv.src) { toast.error("Waiting for video — try again in a moment"); return; }
 
     // Safari (iOS / macOS) path
