@@ -125,6 +125,21 @@ function DoorbellPage() {
     };
   }, []);
 
+  // Attach the local camera stream to the preview element after it mounts.
+  // permGranted flips the UI to render the <video>, so this runs *after* the ref exists.
+  useEffect(() => {
+    if (!permGranted) return;
+    const v = previewRef.current;
+    const s = localStreamRef.current;
+    if (v && s && v.srcObject !== s) {
+      v.srcObject = s;
+      v.muted = true;
+      (v as HTMLVideoElement & { playsInline?: boolean }).playsInline = true;
+      v.play().catch(() => {});
+    }
+  }, [permGranted, isFull]);
+
+
   // Channel
   useEffect(() => {
     if (!permGranted) return;
