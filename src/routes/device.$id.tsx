@@ -617,6 +617,10 @@ function DevicePage() {
             <Button variant="outline" onClick={() => { setFullScreen(true); setTimeout(() => requestNativeFullscreen(fullScreenRef.current), 50); }}>
               <Maximize2 className="mr-2 h-4 w-4" /> Full screen
             </Button>
+            <Button variant="default" className="sm:col-span-2" onClick={startView} disabled={!doorbellOnline || ringing || viewing}>
+              <Eye className="mr-2 h-4 w-4" />
+              {viewing ? "Viewing camera…" : "View camera"}
+            </Button>
             <Button variant="outline" className="sm:col-span-2" onClick={() => (pipActive ? exitPip() : enterPip())}>
               <PictureInPicture2 className="mr-2 h-4 w-4" />
               {pipActive ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
