@@ -520,10 +520,10 @@ function DevicePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Always-mounted video element. Lives at root so PiP can open even
-          before anyone rings (idle stream) and the WebRTC stream can be
-          attached without remounting. When ringing, it's repositioned to
-          fill the overlay; otherwise hidden (1x1 offscreen). */}
+      {/* Always-mounted video. Lives at root so PiP works even before anyone
+          rings (driven by the idle canvas stream) and the WebRTC stream can
+          attach without remounting. When ringing, it fills the screen behind
+          the overlay UI; otherwise it sits hidden 1x1 offscreen. */}
       <video
         ref={videoRef}
         autoPlay
@@ -531,10 +531,9 @@ function DevicePage() {
         muted={!ringing}
         className={
           ringing
-            ? "fixed left-0 right-0 z-50 bg-black object-cover"
+            ? "fixed inset-0 z-40 h-full w-full bg-black object-cover"
             : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
         }
-        style={ringing ? { top: "calc(env(safe-area-inset-top) + 73px)", bottom: "260px" } : undefined}
       />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
