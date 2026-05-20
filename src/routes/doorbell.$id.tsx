@@ -180,13 +180,16 @@ function DoorbellPage() {
     };
   }, [id, permGranted]);
 
-  // Wake lock when fullscreen
+  // Wake lock — keep device awake whenever the doorbell is active
   useEffect(() => {
+    if (!permGranted) return;
+    let released = false;
     async function acquire() {
       try {
-        if ("wakeLock" in navigator && isFull) {
+        if ("wakeLock" in navigator) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const lock = await (navigator as any).wakeLock.request("screen");
+          if (released) { try { await lock.release(); } catch { /* noop */ } return; }
           wakeLockRef.current = lock;
           lock.addEventListener?.("release", () => { wakeLockRef.current = null; });
         }
@@ -194,15 +197,17 @@ function DoorbellPage() {
         // ignore
       }
     }
-    if (isFull) acquire();
-    const onVis = () => { if (document.visibilityState === "visible" && isFull) acquire(); };
+    void acquire();
+    const onVis = () => { if (document.visibilityState === "visible" && !wakeLockRef.current) void acquire(); };
     document.addEventListener("visibilitychange", onVis);
     return () => {
+      released = true;
       document.removeEventListener("visibilitychange", onVis);
       wakeLockRef.current?.release().catch(() => {});
       wakeLockRef.current = null;
     };
-  }, [isFull]);
+  }, [permGranted]);
+
 
   async function onRing() {
     const stream = localStreamRef.current;
