@@ -321,81 +321,81 @@ function DevicePage() {
 
   async function exitPip() {
     stopPipLoop();
+    const sv = videoRef.current as (HTMLVideoElement & {
+      webkitPresentationMode?: string;
+      webkitSetPresentationMode?: (m: string) => void;
+    }) | null;
     try {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
+      } else if (sv?.webkitPresentationMode === "picture-in-picture" && sv.webkitSetPresentationMode) {
+        sv.webkitSetPresentationMode("inline");
       }
     } catch { /* noop */ }
     setPipActive(false);
   }
 
   async function enterPip() {
-    const srcVideo = videoRef.current;
-    if (!srcVideo || !srcVideo.srcObject) {
+    const sv = videoRef.current as (HTMLVideoElement & {
+      webkitSupportsPresentationMode?: (m: string) => boolean;
+      webkitSetPresentationMode?: (m: string) => void;
+      requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
+    }) | null;
+    if (!sv || !sv.srcObject) {
       toast.error("No video yet");
       return;
     }
+    try { await sv.play(); } catch { /* noop */ }
+
+    // Safari path
+    if (typeof sv.webkitSupportsPresentationMode === "function" &&
+        sv.webkitSupportsPresentationMode("picture-in-picture") &&
+        typeof sv.webkitSetPresentationMode === "function") {
+      try {
+        sv.webkitSetPresentationMode("picture-in-picture");
+        setPipActive(true);
+        const onChange = () => {
+          if (sv.webkitPresentationMode !== "picture-in-picture") {
+            setPipActive(false);
+            sv.removeEventListener("webkitpresentationmodechanged", onChange);
+          }
+        };
+        sv.addEventListener("webkitpresentationmodechanged", onChange);
+        return;
+      } catch (e) {
+        console.warn("Safari PiP failed:", e);
+      }
+    }
+
+    // Standard Picture-in-Picture API
     const anyDoc = document as Document & { pictureInPictureEnabled?: boolean };
-    if (!anyDoc.pictureInPictureEnabled) {
-      toast.error("Picture-in-Picture not supported on this device");
+    if (!anyDoc.pictureInPictureEnabled || typeof sv.requestPictureInPicture !== "function") {
+      toast.error("Picture-in-Picture not supported on this browser");
       return;
     }
     try {
-      const canvas = pipCanvasRef.current ?? document.createElement("canvas");
-      pipCanvasRef.current = canvas;
-      const pipVideo = pipVideoRef.current ?? document.createElement("video");
-      pipVideoRef.current = pipVideo;
-      pipVideo.muted = true;
-      pipVideo.autoplay = true;
-      (pipVideo as HTMLVideoElement & { playsInline?: boolean }).playsInline = true;
-
-      const w = srcVideo.videoWidth || 640;
-      const h = srcVideo.videoHeight || 360;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("no 2d ctx");
-
-      const draw = () => {
-        const sv = videoRef.current;
-        if (!sv) return;
-        const vw = sv.videoWidth || w;
-        const vh = sv.videoHeight || h;
-        if (canvas.width !== vw || canvas.height !== vh) {
-          canvas.width = vw;
-          canvas.height = vh;
-        }
-        try { ctx.drawImage(sv, 0, 0, canvas.width, canvas.height); } catch { /* noop */ }
-        // Banner
-        const bannerH = Math.max(48, Math.round(canvas.height * 0.11));
-        ctx.fillStyle = "rgba(0,0,0,0.65)";
-        ctx.fillRect(0, 0, canvas.width, bannerH);
-        ctx.fillStyle = "#fff";
-        ctx.textBaseline = "middle";
-        ctx.textAlign = "center";
-        const fs = Math.round(bannerH * 0.45);
-        ctx.font = `600 ${fs}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-        ctx.fillText("Someone is at your door", canvas.width / 2, bannerH / 2);
-        pipRafRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-
-      const stream = canvas.captureStream(30);
-      pipVideo.srcObject = stream;
-      await pipVideo.play().catch(() => {});
-      await pipVideo.requestPictureInPicture();
+      await sv.requestPictureInPicture();
       setPipActive(true);
-
-      pipVideo.onleavepictureinpicture = () => {
-        stopPipLoop();
-        setPipActive(false);
-      };
+      sv.addEventListener("leavepictureinpicture", () => setPipActive(false), { once: true });
     } catch (e) {
-      console.warn(e);
-      toast.error("Couldn't start Picture-in-Picture");
-      stopPipLoop();
-      setPipActive(false);
+      console.warn("PiP failed:", e);
+      toast.error("Couldn't start Picture-in-Picture — tap Picture-in-Picture again");
     }
+  }
+
+  // Auto-enter PiP when the user backgrounds the tab during a call,
+  // so the visitor's camera stays visible on iOS / desktop Safari.
+  useEffect(() => {
+    if (!ringing) return;
+    function onVis() {
+      if (document.visibilityState === "hidden" && !pipActive) {
+        void enterPip();
+      }
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ringing, pipActive]);
   }
 
   function closeCall() {
