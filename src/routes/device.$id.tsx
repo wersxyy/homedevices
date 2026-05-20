@@ -396,6 +396,10 @@ function DevicePage() {
   }
 
   function closeCall() {
+    if (allowTimerRef.current != null) {
+      window.clearTimeout(allowTimerRef.current);
+      allowTimerRef.current = null;
+    }
     setRinging(false);
     setAllowed(false);
     setSpeaking(false);
@@ -421,11 +425,14 @@ function DevicePage() {
 
   function sendAllow() {
     stopRing();
+    setAllowed(true);
     channelRef.current?.send({ type: "broadcast", event: "allowed", payload: {} });
-    // Allow also clears the ringing state on both sides so the doorbell is ready for the next person.
-    channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
-    channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
-    closeCall();
+    if (allowTimerRef.current != null) window.clearTimeout(allowTimerRef.current);
+    allowTimerRef.current = window.setTimeout(() => {
+      channelRef.current?.send({ type: "broadcast", event: "done", payload: {} });
+      channelRef.current?.send({ type: "broadcast", event: "owner-end", payload: {} });
+      closeCall();
+    }, 3500);
   }
 
   function sendDone() {
