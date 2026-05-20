@@ -129,12 +129,14 @@ function DevicePage() {
       a.loop = true;
       a.muted = false;
       a.currentTime = 0;
-      void a.play().catch((err) => { console.warn("Ringtone blocked:", err); });
+      setRingtonePlaying(true);
+      void a.play().catch((err) => { console.warn("Ringtone blocked:", err); setRingtonePlaying(false); });
     } catch { /* noop */ }
   }
 
   function stopRing() {
     const a = ringAudioRef.current;
+    setRingtonePlaying(false);
     if (!a) return;
     try { a.pause(); a.currentTime = 0; } catch { /* noop */ }
   }
