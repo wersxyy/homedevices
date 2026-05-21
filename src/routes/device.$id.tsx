@@ -403,7 +403,8 @@ function DevicePage() {
     channelRef.current?.send({ type: "broadcast", event: "answer", payload: answer });
   }
 
-  function closePc() {
+  function closePc(opts: { reattachIdle?: boolean } = {}) {
+    const reattachIdle = opts.reattachIdle ?? true;
     pcRef.current?.getSenders().forEach((s) => { try { s.track?.stop(); } catch { /* noop */ } });
     pcRef.current?.close();
     pcRef.current = null;
@@ -412,7 +413,7 @@ function DevicePage() {
     if (videoRef.current) videoRef.current.srcObject = null;
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
     // Restore idle placeholder so PiP keeps working between calls.
-    attachIdleToVideo();
+    if (reattachIdle) attachIdleToVideo();
   }
 
   function stopPipLoop() {
