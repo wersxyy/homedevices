@@ -190,7 +190,13 @@ function DoorbellPage() {
     });
     ch.on("broadcast", { event: "owner-end" }, () => endCall());
     ch.on("broadcast", { event: "view-request" }, () => {
-      if (ringing || viewing) return;
+      // Use ref instead of stale state closure. If a previous call/view
+      // is lingering, tear it down before starting a fresh view session.
+      if (activeRef.current.ringing) return;
+      if (activeRef.current.viewing) {
+        try { pcRef.current?.close(); } catch { /* noop */ }
+        pcRef.current = null;
+      }
       void startViewSession();
     });
     ch.on("broadcast", { event: "chat" }, (msg) => {
