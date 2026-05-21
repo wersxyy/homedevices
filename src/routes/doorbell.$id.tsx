@@ -310,6 +310,7 @@ function DoorbellPage() {
   async function startViewSession() {
     const stream = localStreamRef.current;
     if (!stream) return;
+    activeRef.current.viewing = true;
     setViewing(true);
     setSpeakingBack(false);
     pendingIce.current = [];
