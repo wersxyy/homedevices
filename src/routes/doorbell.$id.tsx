@@ -257,6 +257,7 @@ function DoorbellPage() {
     if (ringing) return;
 
 
+    activeRef.current.ringing = true;
     setRinging(true);
     setAllowed(false);
     setSpeakingBack(false);
