@@ -45,6 +45,7 @@ function DoorbellPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const activeRef = useRef<{ ringing: boolean; viewing: boolean }>({ ringing: false, viewing: false });
   const fsContainerRef = useRef<HTMLDivElement | null>(null);
 
   async function enterFullscreen() {
