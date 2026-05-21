@@ -342,9 +342,10 @@ function DevicePage() {
   }, [device?.id, user?.id]);
 
   async function handleOffer(sdp: RTCSessionDescriptionInit) {
-    closePc();
+    closePc({ reattachIdle: false });
     const pc = new RTCPeerConnection(ICE);
     pcRef.current = pc;
+
 
     // Pre-add our mic (muted)
     let local: MediaStream | null = null;
