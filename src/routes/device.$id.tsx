@@ -65,6 +65,7 @@ function DevicePage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
@@ -360,6 +361,17 @@ function DevicePage() {
 
     pc.ontrack = (e) => {
       const stream = e.streams[0];
+      if (e.track.kind === "audio") {
+        // Route remote audio to a dedicated <audio> element so "Speak back"
+        // is audible even when the video element is muted between calls.
+        if (remoteAudioRef.current && stream) {
+          remoteAudioRef.current.srcObject = stream;
+          remoteAudioRef.current.muted = false;
+          remoteAudioRef.current.volume = 1;
+          remoteAudioRef.current.play().catch((err) => console.warn("remote audio blocked:", err));
+        }
+        return;
+      }
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
@@ -398,6 +410,7 @@ function DevicePage() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
     // Restore idle placeholder so PiP keeps working between calls.
     attachIdleToVideo();
   }
@@ -585,6 +598,7 @@ function DevicePage() {
             : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
         }
       />
+      <audio ref={remoteAudioRef} autoPlay playsInline />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
