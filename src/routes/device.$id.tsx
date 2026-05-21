@@ -361,6 +361,17 @@ function DevicePage() {
 
     pc.ontrack = (e) => {
       const stream = e.streams[0];
+      if (e.track.kind === "audio") {
+        // Route remote audio to a dedicated <audio> element so "Speak back"
+        // is audible even when the video element is muted between calls.
+        if (remoteAudioRef.current && stream) {
+          remoteAudioRef.current.srcObject = stream;
+          remoteAudioRef.current.muted = false;
+          remoteAudioRef.current.volume = 1;
+          remoteAudioRef.current.play().catch((err) => console.warn("remote audio blocked:", err));
+        }
+        return;
+      }
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
