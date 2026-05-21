@@ -528,6 +528,10 @@ function DevicePage() {
   function startView() {
     if (!doorbellOnline) { toast.error("Doorbell is offline"); return; }
     if (ringing || viewing) return;
+    // Clear idle placeholder so "Waiting for visitor…" doesn't show while
+    // the WebRTC connection is being established.
+    if (videoRef.current) videoRef.current.srcObject = null;
+    if (fullscreenVideoRef.current) fullscreenVideoRef.current.srcObject = null;
     setViewing(true);
     setSpeaking(false);
     pendingIce.current = [];
