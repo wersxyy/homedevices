@@ -65,6 +65,7 @@ function DevicePage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
   const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const [customSound, setCustomSound] = useState<{ name: string; dataUrl: string } | null>(null);
   const ringOverlayRef = useRef<HTMLDivElement | null>(null);
   const fullScreenRef = useRef<HTMLDivElement | null>(null);
