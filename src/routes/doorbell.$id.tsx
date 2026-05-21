@@ -45,6 +45,7 @@ function DoorbellPage() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const pendingIce = useRef<RTCIceCandidateInit[]>([]);
+  const activeRef = useRef<{ ringing: boolean; viewing: boolean }>({ ringing: false, viewing: false });
   const fsContainerRef = useRef<HTMLDivElement | null>(null);
 
   async function enterFullscreen() {
@@ -189,7 +190,13 @@ function DoorbellPage() {
     });
     ch.on("broadcast", { event: "owner-end" }, () => endCall());
     ch.on("broadcast", { event: "view-request" }, () => {
-      if (ringing || viewing) return;
+      // Use ref instead of stale state closure. If a previous call/view
+      // is lingering, tear it down before starting a fresh view session.
+      if (activeRef.current.ringing) return;
+      if (activeRef.current.viewing) {
+        try { pcRef.current?.close(); } catch { /* noop */ }
+        pcRef.current = null;
+      }
       void startViewSession();
     });
     ch.on("broadcast", { event: "chat" }, (msg) => {
@@ -250,6 +257,7 @@ function DoorbellPage() {
     if (ringing) return;
 
 
+    activeRef.current.ringing = true;
     setRinging(true);
     setAllowed(false);
     setSpeakingBack(false);
@@ -302,6 +310,7 @@ function DoorbellPage() {
   async function startViewSession() {
     const stream = localStreamRef.current;
     if (!stream) return;
+    activeRef.current.viewing = true;
     setViewing(true);
     setSpeakingBack(false);
     pendingIce.current = [];
@@ -332,6 +341,8 @@ function DoorbellPage() {
   function endCall() {
     pcRef.current?.close();
     pcRef.current = null;
+    activeRef.current.ringing = false;
+    activeRef.current.viewing = false;
     setRinging(false);
     setViewing(false);
     setAllowed(false);

@@ -342,9 +342,10 @@ function DevicePage() {
   }, [device?.id, user?.id]);
 
   async function handleOffer(sdp: RTCSessionDescriptionInit) {
-    closePc();
+    closePc({ reattachIdle: false });
     const pc = new RTCPeerConnection(ICE);
     pcRef.current = pc;
+
 
     // Pre-add our mic (muted)
     let local: MediaStream | null = null;
@@ -403,7 +404,8 @@ function DevicePage() {
     channelRef.current?.send({ type: "broadcast", event: "answer", payload: answer });
   }
 
-  function closePc() {
+  function closePc(opts: { reattachIdle?: boolean } = {}) {
+    const reattachIdle = opts.reattachIdle ?? true;
     pcRef.current?.getSenders().forEach((s) => { try { s.track?.stop(); } catch { /* noop */ } });
     pcRef.current?.close();
     pcRef.current = null;
@@ -412,7 +414,7 @@ function DevicePage() {
     if (videoRef.current) videoRef.current.srcObject = null;
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
     // Restore idle placeholder so PiP keeps working between calls.
-    attachIdleToVideo();
+    if (reattachIdle) attachIdleToVideo();
   }
 
   function stopPipLoop() {
@@ -526,6 +528,10 @@ function DevicePage() {
   function startView() {
     if (!doorbellOnline) { toast.error("Doorbell is offline"); return; }
     if (ringing || viewing) return;
+    // Clear idle placeholder so "Waiting for visitor…" doesn't show while
+    // the WebRTC connection is being established.
+    if (videoRef.current) videoRef.current.srcObject = null;
+    if (fullscreenVideoRef.current) fullscreenVideoRef.current.srcObject = null;
     setViewing(true);
     setSpeaking(false);
     pendingIce.current = [];
