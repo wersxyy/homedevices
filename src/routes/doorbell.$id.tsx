@@ -341,6 +341,8 @@ function DoorbellPage() {
   function endCall() {
     pcRef.current?.close();
     pcRef.current = null;
+    activeRef.current.ringing = false;
+    activeRef.current.viewing = false;
     setRinging(false);
     setViewing(false);
     setAllowed(false);
