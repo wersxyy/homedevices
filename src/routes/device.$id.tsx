@@ -598,6 +598,7 @@ function DevicePage() {
             : "pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-0"
         }
       />
+      <audio ref={remoteAudioRef} autoPlay playsInline />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
