@@ -410,6 +410,7 @@ function DevicePage() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
     // Restore idle placeholder so PiP keeps working between calls.
     attachIdleToVideo();
   }
