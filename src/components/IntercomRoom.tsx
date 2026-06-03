@@ -305,12 +305,12 @@ export default function IntercomRoom({ deviceId, name, role, backHref }: Props) 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4">
-        <Link to={backHref} className="flex items-center gap-2 font-semibold">
+        <a href={backHref} className="flex items-center gap-2 font-semibold">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
             <Bell className="h-4 w-4" />
           </div>
           HomeDevices
-        </Link>
+        </a>
         <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${connected ? "border-success/40 bg-success/10 text-success" : otherOnline ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"}`}>
           <span className={`h-2 w-2 rounded-full ${connected ? "bg-success" : otherOnline ? "bg-primary" : "bg-muted-foreground"}`} />
           {connected ? "Connected" : otherOnline ? "Connecting…" : "Waiting for the other side…"}
