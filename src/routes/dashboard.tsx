@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bell, Plus, LogOut, DoorOpen } from "lucide-react";
+import { Bell, Plus, LogOut, DoorOpen, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,12 +31,18 @@ function genCode() {
   return s;
 }
 
+function typeLabel(type: string) {
+  if (type === "intercom") return "Intercom";
+  return "Doorbell Camera";
+}
+
 function Dashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [deviceType, setDeviceType] = useState<"doorbell" | "intercom">("doorbell");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -63,14 +69,15 @@ function Dashboard() {
     try {
       const { error } = await supabase.from("devices").insert({
         user_id: user.id,
-        name: name.trim() || "Doorbell",
-        type: "doorbell",
+        name: name.trim() || (deviceType === "intercom" ? "Intercom" : "Doorbell"),
+        type: deviceType,
         access_code: genCode(),
       });
       if (error) throw error;
       toast.success("Device added");
       setOpen(false);
       setName("");
+      setDeviceType("doorbell");
       load();
     } catch (err) {
       toast.error((err as Error).message);
@@ -102,7 +109,7 @@ function Dashboard() {
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold md:text-3xl">Your devices</h1>
-            <p className="text-sm text-muted-foreground">Add a smart device and pair it with a phone or tablet.</p>
+            <p className="text-sm text-muted-foreground">Turn any device into a smart home device — add one and pair it with a phone or tablet.</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -115,14 +122,34 @@ function Dashboard() {
               <form onSubmit={createDevice} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Type</Label>
-                  <div className="flex items-center gap-2 rounded-lg border bg-accent/40 px-3 py-2 text-sm">
-                    <DoorOpen className="h-4 w-4" /> Doorbell Camera
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeviceType("doorbell")}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "doorbell" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <DoorOpen className="h-4 w-4 shrink-0" />
+                      <div>
+                        <div className="font-medium">Doorbell Camera</div>
+                        <div className="text-xs text-muted-foreground">Ring, see, speak.</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeviceType("intercom")}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "intercom" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <Radio className="h-4 w-4 shrink-0" />
+                      <div>
+                        <div className="font-medium">Intercom</div>
+                        <div className="text-xs text-muted-foreground">Room-to-room talk.</div>
+                      </div>
+                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground">More device types coming soon.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="Main Entrance" value={name} onChange={(e) => setName(e.target.value)} required />
+                  <Input id="name" placeholder={deviceType === "intercom" ? "Kitchen" : "Main Entrance"} value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={creating}>
@@ -142,27 +169,34 @@ function Dashboard() {
               <p className="mt-3 text-sm text-muted-foreground">No devices yet. Tap "Add device" to begin.</p>
             </div>
           )}
-          {devices?.map((d) => (
-            <Link
-              key={d.id}
-              to="/device/$id"
-              params={{ id: d.id }}
-              className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/60 hover:shadow-md"
-            >
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <DoorOpen className="h-5 w-5" />
+          {devices?.map((d) => {
+            const isIntercom = d.type === "intercom";
+            const Icon = isIntercom ? Radio : DoorOpen;
+            const to = isIntercom ? "/intercom-host/$id" : "/device/$id";
+            return (
+              <Link
+                key={d.id}
+                to={to}
+                params={{ id: d.id }}
+                className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/60 hover:shadow-md"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{d.name}</h3>
+                    <p className="text-xs text-muted-foreground">{typeLabel(d.type)}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">{d.name}</h3>
-                  <p className="text-xs text-muted-foreground">Doorbell Camera</p>
-                </div>
-              </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                {d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
-              </p>
-            </Link>
-          ))}
+                <p className="mt-4 text-xs text-muted-foreground">
+                  {isIntercom
+                    ? "Tap to open this intercom."
+                    : d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
+                </p>
+              </Link>
+            );
+          })}
         </div>
       </main>
     </div>

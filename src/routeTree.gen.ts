@@ -13,6 +13,8 @@ import { Route as JoinRouteImport } from './routes/join'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as IntercomIdRouteImport } from './routes/intercom.$id'
+import { Route as IntercomHostIdRouteImport } from './routes/intercom-host.$id'
 import { Route as DoorbellIdRouteImport } from './routes/doorbell.$id'
 import { Route as DeviceIdRouteImport } from './routes/device.$id'
 
@@ -36,6 +38,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntercomIdRoute = IntercomIdRouteImport.update({
+  id: '/intercom/$id',
+  path: '/intercom/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntercomHostIdRoute = IntercomHostIdRouteImport.update({
+  id: '/intercom-host/$id',
+  path: '/intercom-host/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DoorbellIdRoute = DoorbellIdRouteImport.update({
   id: '/doorbell/$id',
   path: '/doorbell/$id',
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/join': typeof JoinRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
+  '/intercom-host/$id': typeof IntercomHostIdRoute
+  '/intercom/$id': typeof IntercomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/join': typeof JoinRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
+  '/intercom-host/$id': typeof IntercomHostIdRoute
+  '/intercom/$id': typeof IntercomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +87,8 @@ export interface FileRoutesById {
   '/join': typeof JoinRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
+  '/intercom-host/$id': typeof IntercomHostIdRoute
+  '/intercom/$id': typeof IntercomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +99,18 @@ export interface FileRouteTypes {
     | '/join'
     | '/device/$id'
     | '/doorbell/$id'
+    | '/intercom-host/$id'
+    | '/intercom/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/join' | '/device/$id' | '/doorbell/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/join'
+    | '/device/$id'
+    | '/doorbell/$id'
+    | '/intercom-host/$id'
+    | '/intercom/$id'
   id:
     | '__root__'
     | '/'
@@ -91,6 +119,8 @@ export interface FileRouteTypes {
     | '/join'
     | '/device/$id'
     | '/doorbell/$id'
+    | '/intercom-host/$id'
+    | '/intercom/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +130,8 @@ export interface RootRouteChildren {
   JoinRoute: typeof JoinRoute
   DeviceIdRoute: typeof DeviceIdRoute
   DoorbellIdRoute: typeof DoorbellIdRoute
+  IntercomHostIdRoute: typeof IntercomHostIdRoute
+  IntercomIdRoute: typeof IntercomIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +164,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/intercom/$id': {
+      id: '/intercom/$id'
+      path: '/intercom/$id'
+      fullPath: '/intercom/$id'
+      preLoaderRoute: typeof IntercomIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intercom-host/$id': {
+      id: '/intercom-host/$id'
+      path: '/intercom-host/$id'
+      fullPath: '/intercom-host/$id'
+      preLoaderRoute: typeof IntercomHostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/doorbell/$id': {
       id: '/doorbell/$id'
       path: '/doorbell/$id'
@@ -156,6 +202,8 @@ const rootRouteChildren: RootRouteChildren = {
   JoinRoute: JoinRoute,
   DeviceIdRoute: DeviceIdRoute,
   DoorbellIdRoute: DoorbellIdRoute,
+  IntercomHostIdRoute: IntercomHostIdRoute,
+  IntercomIdRoute: IntercomIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
