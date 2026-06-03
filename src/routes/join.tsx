@@ -65,9 +65,9 @@ function JoinPage() {
           </div>
           HomeDevices
         </Link>
-        <h1 className="mt-6 text-2xl font-semibold">Join as doorbell</h1>
+        <h1 className="mt-6 text-2xl font-semibold">Pair this device</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enter the access code shown on your account device.
+          Turn any device into a smart home device. Enter the access code shown on your account.
         </p>
 
         {blocked ? (
