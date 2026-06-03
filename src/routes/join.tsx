@@ -44,7 +44,11 @@ function JoinPage() {
         return;
       }
       sessionStorage.setItem(`device:${res.device.id}`, JSON.stringify(res.device));
-      navigate({ to: "/doorbell/$id", params: { id: res.device.id } });
+      if (res.device.type === "intercom") {
+        navigate({ to: "/intercom/$id", params: { id: res.device.id } });
+      } else {
+        navigate({ to: "/doorbell/$id", params: { id: res.device.id } });
+      }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
