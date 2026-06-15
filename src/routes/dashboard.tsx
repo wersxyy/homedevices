@@ -33,6 +33,7 @@ function genCode() {
 
 function typeLabel(type: string) {
   if (type === "intercom") return "Intercom";
+  if (type === "assistant") return "Voice Assistant";
   return "Doorbell Camera";
 }
 
