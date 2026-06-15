@@ -17,6 +17,7 @@ import { Route as IntercomIdRouteImport } from './routes/intercom.$id'
 import { Route as IntercomHostIdRouteImport } from './routes/intercom-host.$id'
 import { Route as DoorbellIdRouteImport } from './routes/doorbell.$id'
 import { Route as DeviceIdRouteImport } from './routes/device.$id'
+import { Route as AssistantIdRouteImport } from './routes/assistant.$id'
 
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
@@ -58,12 +59,18 @@ const DeviceIdRoute = DeviceIdRouteImport.update({
   path: '/device/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssistantIdRoute = AssistantIdRouteImport.update({
+  id: '/assistant/$id',
+  path: '/assistant/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/assistant/$id': typeof AssistantIdRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
   '/intercom-host/$id': typeof IntercomHostIdRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/assistant/$id': typeof AssistantIdRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
   '/intercom-host/$id': typeof IntercomHostIdRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
   '/join': typeof JoinRoute
+  '/assistant/$id': typeof AssistantIdRoute
   '/device/$id': typeof DeviceIdRoute
   '/doorbell/$id': typeof DoorbellIdRoute
   '/intercom-host/$id': typeof IntercomHostIdRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/join'
+    | '/assistant/$id'
     | '/device/$id'
     | '/doorbell/$id'
     | '/intercom-host/$id'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/join'
+    | '/assistant/$id'
     | '/device/$id'
     | '/doorbell/$id'
     | '/intercom-host/$id'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/join'
+    | '/assistant/$id'
     | '/device/$id'
     | '/doorbell/$id'
     | '/intercom-host/$id'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
   JoinRoute: typeof JoinRoute
+  AssistantIdRoute: typeof AssistantIdRoute
   DeviceIdRoute: typeof DeviceIdRoute
   DoorbellIdRoute: typeof DoorbellIdRoute
   IntercomHostIdRoute: typeof IntercomHostIdRoute
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeviceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assistant/$id': {
+      id: '/assistant/$id'
+      path: '/assistant/$id'
+      fullPath: '/assistant/$id'
+      preLoaderRoute: typeof AssistantIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
   JoinRoute: JoinRoute,
+  AssistantIdRoute: AssistantIdRoute,
   DeviceIdRoute: DeviceIdRoute,
   DoorbellIdRoute: DoorbellIdRoute,
   IntercomHostIdRoute: IntercomHostIdRoute,
