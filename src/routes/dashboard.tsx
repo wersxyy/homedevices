@@ -43,7 +43,7 @@ function Dashboard() {
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [deviceType, setDeviceType] = useState<"doorbell" | "intercom">("doorbell");
+  const [deviceType, setDeviceType] = useState<"doorbell" | "intercom" | "assistant">("doorbell");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
