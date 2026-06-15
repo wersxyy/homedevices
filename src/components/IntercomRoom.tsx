@@ -311,10 +311,25 @@ export default function IntercomRoom({ deviceId, name, role, backHref }: Props) 
           </div>
           HomeDevices
         </a>
-        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${connected ? "border-success/40 bg-success/10 text-success" : otherOnline ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"}`}>
-          <span className={`h-2 w-2 rounded-full ${connected ? "bg-success" : otherOnline ? "bg-primary" : "bg-muted-foreground"}`} />
-          {connected ? "Connected" : otherOnline ? "Connecting…" : "Waiting for the other side…"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${connected ? "border-success/40 bg-success/10 text-success" : otherOnline ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"}`}>
+            <span className={`h-2 w-2 rounded-full ${connected ? "bg-success" : otherOnline ? "bg-primary" : "bg-muted-foreground"}`} />
+            {connected ? "Connected" : otherOnline ? "Connecting…" : "Waiting for the other side…"}
+          </span>
+          {role === "paired" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!confirm("Leave this intercom? You'll need the code to rejoin.")) return;
+                sessionStorage.removeItem(`device:${deviceId}`);
+                window.location.href = "/join";
+              }}
+            >
+              Leave
+            </Button>
+          )}
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-6">

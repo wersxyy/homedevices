@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bell, Plus, LogOut, DoorOpen, Radio, Sparkles } from "lucide-react";
+import { Bell, Plus, LogOut, DoorOpen, Radio, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,16 @@ function Dashboard() {
     } finally {
       setCreating(false);
     }
+  }
+
+  async function deleteDevice(e: React.MouseEvent, d: Device) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete "${d.name}"? This can't be undone.`)) return;
+    const { error } = await supabase.from("devices").delete().eq("id", d.id);
+    if (error) return toast.error(error.message);
+    toast.success("Device deleted");
+    setDevices((prev) => (prev ? prev.filter((x) => x.id !== d.id) : prev));
   }
 
   async function signOut() {
@@ -188,8 +198,16 @@ function Dashboard() {
                 key={d.id}
                 to={to}
                 params={{ id: d.id }}
-                className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/60 hover:shadow-md"
+                className="group relative rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/60 hover:shadow-md"
               >
+                <button
+                  type="button"
+                  aria-label="Delete device"
+                  onClick={(e) => deleteDevice(e, d)}
+                  className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-md text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" />

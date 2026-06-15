@@ -408,10 +408,23 @@ function DoorbellPage() {
             </div>
             HomeDevices
           </Link>
-          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${ownerOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
-            <span className={`h-2 w-2 rounded-full ${ownerOnline ? "bg-success" : "bg-muted-foreground"}`} />
-            {ownerOnline ? "Home connected" : "Waiting for home…"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${ownerOnline ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}`}>
+              <span className={`h-2 w-2 rounded-full ${ownerOnline ? "bg-success" : "bg-muted-foreground"}`} />
+              {ownerOnline ? "Home connected" : "Waiting for home…"}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!confirm("Leave this device? You'll need the code to rejoin.")) return;
+                sessionStorage.removeItem(`device:${id}`);
+                navigate({ to: "/join" });
+              }}
+            >
+              Leave
+            </Button>
+          </div>
         </header>
       )}
 
