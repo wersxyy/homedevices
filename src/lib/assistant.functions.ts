@@ -77,3 +77,41 @@ Fabricate reasonable data; this is a demo. Keep text concise and conversational.
     return parsed as AssistantReply;
   });
 
+export const synthesizeSpeech = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        text: z.string().min(1).max(2000),
+        voice: z.string().min(1).max(40).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env.OpenAI_TTS;
+    if (!key) throw new Error("Missing OpenAI_TTS key");
+
+    const res = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini-tts",
+        voice: data.voice ?? "alloy",
+        input: data.text,
+        format: "mp3",
+      }),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`TTS error: ${res.status} ${txt}`);
+    }
+
+    const buf = new Uint8Array(await res.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+    const base64 = btoa(binary);
+    return { audio: base64, mime: "audio/mpeg" };
+  });
