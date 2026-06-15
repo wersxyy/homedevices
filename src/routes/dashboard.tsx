@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Bell, Plus, LogOut, DoorOpen, Radio } from "lucide-react";
+import { Bell, Plus, LogOut, DoorOpen, Radio, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ function genCode() {
 
 function typeLabel(type: string) {
   if (type === "intercom") return "Intercom";
+  if (type === "assistant") return "Voice Assistant";
   return "Doorbell Camera";
 }
 
@@ -42,7 +43,7 @@ function Dashboard() {
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [deviceType, setDeviceType] = useState<"doorbell" | "intercom">("doorbell");
+  const [deviceType, setDeviceType] = useState<"doorbell" | "intercom" | "assistant">("doorbell");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ function Dashboard() {
     try {
       const { error } = await supabase.from("devices").insert({
         user_id: user.id,
-        name: name.trim() || (deviceType === "intercom" ? "Intercom" : "Doorbell"),
+        name: name.trim() || (deviceType === "intercom" ? "Intercom" : deviceType === "assistant" ? "Nico" : "Doorbell"),
         type: deviceType,
         access_code: genCode(),
       });
@@ -122,34 +123,42 @@ function Dashboard() {
               <form onSubmit={createDevice} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Type</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setDeviceType("doorbell")}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "doorbell" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
+                      className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "doorbell" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
                     >
                       <DoorOpen className="h-4 w-4 shrink-0" />
-                      <div>
-                        <div className="font-medium">Doorbell Camera</div>
-                        <div className="text-xs text-muted-foreground">Ring, see, speak.</div>
-                      </div>
+                      <div className="font-medium">Doorbell</div>
+                      <div className="text-xs text-muted-foreground">Ring, see, speak.</div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeviceType("intercom")}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "intercom" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
+                      className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "intercom" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
                     >
                       <Radio className="h-4 w-4 shrink-0" />
-                      <div>
-                        <div className="font-medium">Intercom</div>
-                        <div className="text-xs text-muted-foreground">Room-to-room talk.</div>
-                      </div>
+                      <div className="font-medium">Intercom</div>
+                      <div className="text-xs text-muted-foreground">Room-to-room.</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeviceType("assistant")}
+                      className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-3 text-sm text-left transition ${deviceType === "assistant" ? "border-primary bg-primary/10 text-foreground" : "border-border bg-accent/30 text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <Sparkles className="h-4 w-4 shrink-0" />
+                      <div className="font-medium">Assistant</div>
+                      <div className="text-xs text-muted-foreground">Voice AI.</div>
                     </button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder={deviceType === "intercom" ? "Kitchen" : "Main Entrance"} value={name} onChange={(e) => setName(e.target.value)} required />
+                  <Label htmlFor="name">{deviceType === "assistant" ? "Wake name" : "Name"}</Label>
+                  <Input id="name" placeholder={deviceType === "intercom" ? "Kitchen" : deviceType === "assistant" ? "Nico" : "Main Entrance"} value={name} onChange={(e) => setName(e.target.value)} required />
+                  {deviceType === "assistant" && (
+                    <p className="text-xs text-muted-foreground">You'll say "Hey {name || "Nico"}, …" to wake it.</p>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={creating}>
@@ -171,8 +180,9 @@ function Dashboard() {
           )}
           {devices?.map((d) => {
             const isIntercom = d.type === "intercom";
-            const Icon = isIntercom ? Radio : DoorOpen;
-            const to = isIntercom ? "/intercom-host/$id" : "/device/$id";
+            const isAssistant = d.type === "assistant";
+            const Icon = isAssistant ? Sparkles : isIntercom ? Radio : DoorOpen;
+            const to = isAssistant ? "/assistant/$id" : isIntercom ? "/intercom-host/$id" : "/device/$id";
             return (
               <Link
                 key={d.id}
@@ -190,9 +200,11 @@ function Dashboard() {
                   </div>
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
-                  {isIntercom
-                    ? "Tap to open this intercom."
-                    : d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
+                  {isAssistant
+                    ? `Say "${d.name}, …" to wake.`
+                    : isIntercom
+                      ? "Tap to open this intercom."
+                      : d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
                 </p>
               </Link>
             );
