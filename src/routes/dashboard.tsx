@@ -180,8 +180,9 @@ function Dashboard() {
           )}
           {devices?.map((d) => {
             const isIntercom = d.type === "intercom";
-            const Icon = isIntercom ? Radio : DoorOpen;
-            const to = isIntercom ? "/intercom-host/$id" : "/device/$id";
+            const isAssistant = d.type === "assistant";
+            const Icon = isAssistant ? Sparkles : isIntercom ? Radio : DoorOpen;
+            const to = isAssistant ? "/assistant/$id" : isIntercom ? "/intercom-host/$id" : "/device/$id";
             return (
               <Link
                 key={d.id}
@@ -199,9 +200,11 @@ function Dashboard() {
                   </div>
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
-                  {isIntercom
-                    ? "Tap to open this intercom."
-                    : d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
+                  {isAssistant
+                    ? `Say "${d.name}, …" to wake.`
+                    : isIntercom
+                      ? "Tap to open this intercom."
+                      : d.last_ring_at ? `Last ring: ${new Date(d.last_ring_at).toLocaleString()}` : "No rings yet"}
                 </p>
               </Link>
             );
