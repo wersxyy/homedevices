@@ -70,7 +70,7 @@ function Dashboard() {
     try {
       const { error } = await supabase.from("devices").insert({
         user_id: user.id,
-        name: name.trim() || (deviceType === "intercom" ? "Intercom" : "Doorbell"),
+        name: name.trim() || (deviceType === "intercom" ? "Intercom" : deviceType === "assistant" ? "Nico" : "Doorbell"),
         type: deviceType,
         access_code: genCode(),
       });
