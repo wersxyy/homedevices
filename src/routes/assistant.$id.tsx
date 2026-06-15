@@ -280,8 +280,9 @@ function AssistantPage() {
           <Button variant="ghost" size="sm" onClick={toggleMute} className="text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100">
             {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm" onClick={toggleFullscreen} className="text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100">
+          <Button variant="outline" size="sm" onClick={toggleFullscreen} className="border-zinc-700 bg-zinc-900/60 text-zinc-100 backdrop-blur hover:bg-zinc-800 hover:text-white">
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            <span className="ml-1.5 hidden sm:inline text-xs">{fullscreen ? "Exit" : "Fullscreen"}</span>
           </Button>
         </div>
       </header>
