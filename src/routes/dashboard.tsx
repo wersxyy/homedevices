@@ -87,6 +87,16 @@ function Dashboard() {
     }
   }
 
+  async function deleteDevice(e: React.MouseEvent, d: Device) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete "${d.name}"? This can't be undone.`)) return;
+    const { error } = await supabase.from("devices").delete().eq("id", d.id);
+    if (error) return toast.error(error.message);
+    toast.success("Device deleted");
+    setDevices((prev) => (prev ? prev.filter((x) => x.id !== d.id) : prev));
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     navigate({ to: "/" });
