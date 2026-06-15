@@ -57,7 +57,7 @@ Fabricate reasonable data; this is a demo. Keep text concise and conversational.
 
     const json = await res.json();
     const content = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { text: string; widget?: { type: string; data: unknown } };
+    let parsed: { text: string; widget?: { type: string; data: Record<string, unknown> } };
     try {
       parsed = JSON.parse(content);
     } catch {
