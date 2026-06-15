@@ -1,6 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+export type AssistantWidget =
+  | { type: "weather"; data: { location: string; tempC: number; tempF: number; condition: string; high: number; low: number; forecast: { day: string; tempC: number; condition: string }[] } }
+  | { type: "time"; data: { location: string; time: string; date: string } }
+  | { type: "timer"; data: { label: string; seconds: number } }
+  | { type: "list"; data: { title: string; items: string[] } }
+  | { type: "none"; data: Record<string, never> };
+
+export type AssistantReply = { text: string; widget?: AssistantWidget };
+
+
+
 export const askAssistant = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
